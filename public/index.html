@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Visibility Tracker — GreenBananaSEO</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50:  '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    .dark ::-webkit-scrollbar-thumb { background: #374151; }
+    .light-mode ::-webkit-scrollbar-thumb { background: #d1d5db; }
+
+    /* Sidebar active */
+    .nav-item.active { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .nav-item.active svg { color: #22c55e; }
+    .nav-item { transition: all 0.15s; }
+
+    /* Spark line canvas */
+    .sparkline { display: inline-block; }
+
+    /* Theme toggle */
+    .theme-toggle { cursor: pointer; }
+
+    /* Smooth transitions */
+    * { transition: background-color 0.2s, border-color 0.2s, color 0.1s; }
+    canvas { transition: none !important; }
+  </style>
+</head>
+<body class="dark bg-gray-950 text-gray-100 min-h-screen flex">
+
+  <!-- ═══════════════════════════════════════════ SIDEBAR ═══ -->
+  <aside class="w-56 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col h-screen sticky top-0">
+
+    <!-- Logo -->
+    <div class="px-5 py-5 border-b border-gray-800">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-md bg-brand-500 flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="text-sm font-bold text-white leading-tight">AI Visibility</div>
+          <div class="text-[10px] text-brand-400 font-medium tracking-wide">TRACKER</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-2 mb-2">Main</p>
+
+      <a href="#" class="nav-item active flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Overview
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>
+        AI Citations
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
+        Brand Mentions
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>
+        Cited URLs
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+        Competitors
+      </a>
+
+      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-2 mt-4 mb-2">Analytics</p>
+
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
+        Referral Traffic
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707"/></svg>
+        AI Engines
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><circle cx="12" cy="12" r="3"/></svg>
+        Opportunities
+        <span class="ml-auto text-[10px] bg-brand-500/20 text-brand-400 px-1.5 py-0.5 rounded font-semibold">NEW</span>
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+        Content
+      </a>
+
+      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-2 mt-4 mb-2">System</p>
+
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+        Alerts
+        <span class="ml-auto w-2 h-2 rounded-full bg-red-500"></span>
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+        Reports
+      </a>
+      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><circle cx="12" cy="12" r="3"/></svg>
+        Settings
+      </a>
+    </nav>
+
+    <!-- Tip -->
+    <div class="px-3 pb-4">
+      <div class="bg-brand-500/10 border border-brand-500/20 rounded-lg p-3">
+        <div class="flex items-start gap-2">
+          <svg class="w-4 h-4 text-brand-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/></svg>
+          <div>
+            <p class="text-[11px] font-semibold text-brand-400">Pro Tip</p>
+            <p class="text-[10px] text-gray-400 mt-0.5 leading-relaxed">Track consistent growth in AI citations to improve your brand's visibility in AI-powered answers.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════ MAIN ═══ -->
+  <main class="flex-1 flex flex-col min-h-screen overflow-auto">
+
+    <!-- Top Bar -->
+    <header class="sticky top-0 z-10 bg-gray-950/80 backdrop-blur border-b border-gray-800 px-8 py-3 flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
+          <h1 class="text-xl font-bold text-white">AI Citation Tracking Dashboard</h1>
+        </div>
+        <p class="text-sm text-gray-400 mt-0.5 ml-7">Monitor how your brand is cited across AI engines and track visibility over time.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Theme toggle -->
+        <button onclick="toggleTheme()" class="theme-toggle flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 border border-gray-700">
+          <svg id="theme-icon-dark" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
+          <svg id="theme-icon-light" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
+        </button>
+        <!-- Date range -->
+        <button class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 border border-gray-700">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+          May 17 – Jun 16, 2025
+          <svg class="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+        </button>
+        <!-- Export -->
+        <button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-sm font-semibold text-white">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+          Export
+        </button>
+      </div>
+    </header>
+
+    <div class="p-8 space-y-6">
+
+      <!-- ── STAT CARDS ── -->
+      <div class="grid grid-cols-5 gap-4">
+
+        <!-- AI Citations -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <p class="text-xs text-gray-400 font-medium">AI Citations</p>
+              <p class="text-2xl font-bold text-white mt-1">2,487</p>
+            </div>
+            <canvas id="spark1" width="80" height="40"></canvas>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="flex items-center gap-0.5 text-xs font-semibold text-brand-400">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/></svg>
+              28.6%
+            </span>
+            <span class="text-xs text-gray-500">vs May 16–Jun 15</span>
+          </div>
+        </div>
+
+        <!-- Brand Mentions -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <p class="text-xs text-gray-400 font-medium">Brand Mentions</p>
+              <p class="text-2xl font-bold text-white mt-1">3,842</p>
+            </div>
+            <canvas id="spark2" width="80" height="40"></canvas>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="flex items-center gap-0.5 text-xs font-semibold text-brand-400">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/></svg>
+              32.4%
+            </span>
+            <span class="text-xs text-gray-500">vs May 16–Jun 15</span>
+          </div>
+        </div>
+
+        <!-- Cited URLs -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <p class="text-xs text-gray-400 font-medium">Cited URLs</p>
+              <p class="text-2xl font-bold text-white mt-1">612</p>
+            </div>
+            <canvas id="spark3" width="80" height="40"></canvas>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="flex items-center gap-0.5 text-xs font-semibold text-brand-400">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/></svg>
+              15.7%
+            </span>
+            <span class="text-xs text-gray-500">vs May 16–Jun 15</span>
+          </div>
+        </div>
+
+        <!-- AI Referral Traffic -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <p class="text-xs text-gray-400 font-medium">AI Referral Traffic</p>
+              <p class="text-2xl font-bold text-white mt-1">18,734</p>
+            </div>
+            <canvas id="spark4" width="80" height="40"></canvas>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="flex items-center gap-0.5 text-xs font-semibold text-brand-400">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/></svg>
+              41.3%
+            </span>
+            <span class="text-xs text-gray-500">vs May 16–Jun 15</span>
+          </div>
+        </div>
+
+        <!-- Avg Position -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <p class="text-xs text-gray-400 font-medium">Avg. Position in AI Answers</p>
+              <p class="text-2xl font-bold text-white mt-1">2.6</p>
+            </div>
+            <canvas id="spark5" width="80" height="40"></canvas>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="flex items-center gap-0.5 text-xs font-semibold text-brand-400">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"/></svg>
+              0.6
+            </span>
+            <span class="text-xs text-gray-500">vs May 16–Jun 15</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ROW 2: Two line charts + Cited URLs table ── -->
+      <div class="grid grid-cols-3 gap-4">
+
+        <!-- AI Citations Over Time -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-white">AI Citations Over Time</h3>
+            <select class="text-xs bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-gray-300 focus:outline-none">
+              <option>Daily</option><option>Weekly</option><option>Monthly</option>
+            </select>
+          </div>
+          <canvas id="citationsChart" height="160"></canvas>
+        </div>
+
+        <!-- Brand Mentions Over Time -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-white">Brand Mentions Over Time</h3>
+            <select class="text-xs bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-gray-300 focus:outline-none">
+              <option>Daily</option><option>Weekly</option><option>Monthly</option>
+            </select>
+          </div>
+          <canvas id="mentionsChart" height="160"></canvas>
+        </div>
+
+        <!-- Cited URLs Table -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-white">Cited URLs</h3>
+            <a href="#" class="text-xs text-brand-400 hover:text-brand-300 font-medium">View all →</a>
+          </div>
+          <div class="text-xs text-gray-500 flex justify-between mb-2 px-1">
+            <span>URL</span><span>Citations</span>
+          </div>
+          <div class="space-y-2" id="cited-urls-list">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ROW 3: Competitor Share + Referral Traffic + AI Engine Coverage ── -->
+      <div class="grid grid-cols-3 gap-4">
+
+        <!-- Competitor Share -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-white">Competitor Share</h3>
+            <svg class="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01"/></svg>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="relative w-32 h-32 flex-shrink-0">
+              <canvas id="donutChart"></canvas>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-xl font-bold text-white">41.2%</span>
+                <span class="text-[10px] text-gray-400">Your Brand</span>
+              </div>
+            </div>
+            <div class="space-y-2 flex-1">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-brand-500 flex-shrink-0"></span><span class="text-gray-300">Your Brand</span></div>
+                <span class="font-semibold text-white">41.2%</span>
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-brand-300 flex-shrink-0"></span><span class="text-gray-300">Competitor A</span></div>
+                <span class="font-semibold text-white">26.7%</span>
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-gray-500 flex-shrink-0"></span><span class="text-gray-300">Competitor B</span></div>
+                <span class="font-semibold text-white">17.8%</span>
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-gray-600 flex-shrink-0"></span><span class="text-gray-300">Competitor C</span></div>
+                <span class="font-semibold text-white">14.3%</span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-gray-800 flex items-center gap-2 text-xs text-gray-400">
+            <svg class="w-3.5 h-3.5 text-brand-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
+            Your share of AI citations is up <span class="text-brand-400 font-semibold mx-1">6.4%</span> compared to the previous period.
+          </div>
+        </div>
+
+        <!-- AI Referral Traffic -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-white">AI Referral Traffic Over Time</h3>
+            <select class="text-xs bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-gray-300 focus:outline-none">
+              <option>Daily</option><option>Weekly</option><option>Monthly</option>
+            </select>
+          </div>
+          <canvas id="trafficChart" height="160"></canvas>
+        </div>
+
+        <!-- AI Engine Coverage -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-white">AI Engine Coverage</h3>
+            <svg class="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01"/></svg>
+          </div>
+          <div class="grid grid-cols-5 gap-2 mb-5" id="engine-grid">
+            <!-- filled by JS -->
+          </div>
+          <div class="flex items-center gap-4 text-[10px] text-gray-400 border-t border-gray-800 pt-3">
+            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-brand-500"></span>High (80%+)</div>
+            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-yellow-500"></span>Medium (50–79%)</div>
+            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-gray-500"></span>Low (&lt;50%)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SENTIMENT + PROMPTS ROW ── -->
+      <div class="grid grid-cols-2 gap-4">
+
+        <!-- Sentiment Analysis -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-white">Brand Sentiment in AI Responses</h3>
+            <span class="text-[10px] bg-brand-500/20 text-brand-400 px-2 py-0.5 rounded-full font-medium">Live</span>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="flex-1 space-y-3">
+              <div>
+                <div class="flex justify-between text-xs mb-1"><span class="text-gray-300">Positive</span><span class="text-brand-400 font-semibold">68%</span></div>
+                <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-full bg-brand-500 rounded-full" style="width:68%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1"><span class="text-gray-300">Neutral</span><span class="text-gray-400 font-semibold">24%</span></div>
+                <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-full bg-gray-500 rounded-full" style="width:24%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs mb-1"><span class="text-gray-300">Negative</span><span class="text-red-400 font-semibold">8%</span></div>
+                <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-full bg-red-500 rounded-full" style="width:8%"></div></div>
+              </div>
+            </div>
+            <div class="text-center">
+              <div class="text-4xl font-bold text-brand-400">68</div>
+              <div class="text-xs text-gray-400 mt-1">Sentiment<br>Score</div>
+              <div class="text-xs text-brand-400 font-semibold mt-2">↑ 4 pts</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Performing Prompts -->
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-white">Top Performing Prompts</h3>
+            <a href="#" class="text-xs text-brand-400 hover:text-brand-300 font-medium">Manage prompts →</a>
+          </div>
+          <div class="space-y-2" id="prompts-list">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+
+    <!-- Footer -->
+    <div class="px-8 pb-6 mt-auto">
+      <p class="text-xs text-gray-600">Metrics are aggregated across major AI engines and may not include all sources. Data is updated daily.</p>
+    </div>
+  </main>
+
+  <script>
+    // ═══════════════════ THEME ═══════════════════
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.contains('dark');
+      html.classList.toggle('dark', !isDark);
+      html.classList.toggle('light', isDark);
+      document.body.classList.toggle('bg-gray-950', !isDark);
+      document.body.classList.toggle('bg-gray-50', isDark);
+      document.body.classList.toggle('text-gray-100', !isDark);
+      document.body.classList.toggle('text-gray-900', isDark);
+      document.getElementById('theme-icon-dark').classList.toggle('hidden', isDark);
+      document.getElementById('theme-icon-light').classList.toggle('hidden', !isDark);
+      updateChartsTheme(!isDark ? 'dark' : 'light');
+    }
+
+    // ═══════════════════ DATA ═══════════════════
+    const labels = ['May 17','May 20','May 23','May 26','May 29','Jun 1','Jun 4','Jun 7','Jun 10','Jun 14'];
+
+    const citationsData = [520,680,810,950,1100,1380,1620,1940,2200,2487];
+    const mentionsData  = [820,1050,1280,1550,1890,2200,2640,3100,3420,3842];
+    const trafficData   = [4200,5800,7200,8900,10500,12800,14200,16500,17800,18734];
+
+    const citedURLs = [
+      { url: 'yourbrand.com/blog/ai-seo-guide',       citations: 342, change: '+28.8%', up: true },
+      { url: 'yourbrand.com/solutions/analytics',      citations: 198, change: '+16.2%', up: true },
+      { url: 'yourbrand.com/blog/brand-mentions',      citations: 156, change: '+35.1%', up: true },
+      { url: 'yourbrand.com/resources/ai-search',      citations: 143, change: '+12.4%', up: true },
+      { url: 'yourbrand.com/pricing',                  citations: 112, change: '–3.4%',  up: false },
+    ];
+
+    const engines = [
+      { name: 'ChatGPT',          pct: 92, icon: '💬' },
+      { name: 'Gemini',           pct: 88, icon: '✨' },
+      { name: 'Perplexity',       pct: 81, icon: '⬡' },
+      { name: 'Claude',           pct: 79, icon: '✳' },
+      { name: 'Google AI\nOverviews', pct: 74, icon: '⊕' },
+    ];
+
+    const prompts = [
+      { text: 'Best SEO agency for AI search optimization',  pct: 94, runs: '5/5' },
+      { text: 'Who are the top AEO consultants?',            pct: 86, runs: '4/5' },
+      { text: 'AI citation tracking tools comparison',       pct: 72, runs: '4/5' },
+      { text: 'How to improve brand visibility in ChatGPT',  pct: 65, runs: '3/5' },
+      { text: 'Best tools for monitoring AI mentions',        pct: 58, runs: '3/5' },
+    ];
+
+    // ═══════════════════ RENDER CITED URLs ═══════════════════
+    const urlsList = document.getElementById('cited-urls-list');
+    citedURLs.forEach(r => {
+      urlsList.innerHTML += `
+        <div class="flex items-center justify-between py-1.5 border-b border-gray-800 last:border-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-500 flex-shrink-0"></span>
+            <span class="text-xs text-gray-300 truncate max-w-[160px]">${r.url}</span>
+          </div>
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <span class="text-xs font-semibold text-white">${r.citations}</span>
+            <span class="text-xs font-medium ${r.up ? 'text-brand-400' : 'text-red-400'}">${r.change}</span>
+          </div>
+        </div>`;
+    });
+
+    // ═══════════════════ RENDER ENGINE GRID ═══════════════════
+    const engineGrid = document.getElementById('engine-grid');
+    engines.forEach(e => {
+      const color = e.pct >= 80 ? 'text-brand-400' : e.pct >= 50 ? 'text-yellow-400' : 'text-gray-400';
+      const label = e.pct >= 80 ? 'High' : e.pct >= 50 ? 'Medium' : 'Low';
+      const labelColor = e.pct >= 80 ? 'text-brand-400' : e.pct >= 50 ? 'text-yellow-400' : 'text-gray-400';
+      engineGrid.innerHTML += `
+        <div class="flex flex-col items-center gap-1 bg-gray-800/50 rounded-lg p-2">
+          <span class="text-lg">${e.icon}</span>
+          <span class="text-[10px] text-gray-400 text-center leading-tight">${e.name.replace('\n','<br>')}</span>
+          <span class="text-sm font-bold ${color}">${e.pct}%</span>
+          <span class="text-[10px] font-medium ${labelColor}">${label}</span>
+        </div>`;
+    });
+
+    // ═══════════════════ RENDER PROMPTS ═══════════════════
+    const promptsList = document.getElementById('prompts-list');
+    prompts.forEach(p => {
+      const color = p.pct >= 80 ? '#22c55e' : p.pct >= 60 ? '#eab308' : '#ef4444';
+      promptsList.innerHTML += `
+        <div class="flex items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <p class="text-xs text-gray-300 truncate">${p.text}</p>
+            <div class="mt-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all" style="width:${p.pct}%; background:${color}"></div>
+            </div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <span class="text-xs font-bold text-white">${p.pct}%</span>
+            <p class="text-[10px] text-gray-500">${p.runs} runs</p>
+          </div>
+        </div>`;
+    });
+
+    // ═══════════════════ SPARKLINES ═══════════════════
+    const sparkData = [
+      [40,45,50,48,55,60,68,75,82,100],
+      [38,42,47,50,55,62,70,80,88,100],
+      [60,62,65,68,70,74,80,86,92,100],
+      [30,38,45,50,56,62,70,78,88,100],
+      [100,96,92,90,88,85,83,80,78,75],
+    ];
+    sparkData.forEach((data, i) => {
+      const canvas = document.getElementById(`spark${i+1}`);
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      const min = Math.min(...data), max = Math.max(...data);
+      const pts = data.map((v,j) => [j / (data.length-1) * w, h - (v-min)/(max-min) * (h-4) - 2]);
+      const grad = ctx.createLinearGradient(0,0,w,0);
+      grad.addColorStop(0,'#16a34a'); grad.addColorStop(1,'#4ade80');
+      ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.beginPath(); pts.forEach(([x,y],j) => j===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y));
+      ctx.stroke();
+      // dot at end
+      ctx.fillStyle = '#4ade80';
+      ctx.beginPath(); ctx.arc(pts[pts.length-1][0], pts[pts.length-1][1], 2.5, 0, Math.PI*2); ctx.fill();
+    });
+
+    // ═══════════════════ CHART.JS DEFAULTS ═══════════════════
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = '#9ca3af';
+
+    function lineGradient(ctx, color1, color2) {
+      const g = ctx.createLinearGradient(0, 0, 0, 200);
+      g.addColorStop(0, color1); g.addColorStop(1, color2);
+      return g;
+    }
+
+    // Citations chart
+    const citCtx = document.getElementById('citationsChart').getContext('2d');
+    const citFill = lineGradient(citCtx,'rgba(34,197,94,0.3)','rgba(34,197,94,0.0)');
+    new Chart(citCtx, {
+      type:'line',
+      data:{ labels, datasets:[{ data:citationsData, borderColor:'#22c55e', borderWidth:2,
+        backgroundColor:citFill, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#22c55e',
+        pointBorderColor:'#111827', pointBorderWidth:2 }]},
+      options:{ plugins:{legend:{display:false}}, scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{maxRotation:0, maxTicksLimit:5} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{maxTicksLimit:5} }
+      }, responsive:true, maintainAspectRatio:true }
+    });
+
+    // Mentions chart
+    const menCtx = document.getElementById('mentionsChart').getContext('2d');
+    const menFill = lineGradient(menCtx,'rgba(134,239,172,0.25)','rgba(134,239,172,0.0)');
+    new Chart(menCtx, {
+      type:'line',
+      data:{ labels, datasets:[{ data:mentionsData, borderColor:'#86efac', borderWidth:2,
+        backgroundColor:menFill, fill:true, tension:0.4, pointRadius:3, pointBackgroundColor:'#86efac',
+        pointBorderColor:'#111827', pointBorderWidth:2 }]},
+      options:{ plugins:{legend:{display:false}}, scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{maxRotation:0, maxTicksLimit:5} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{maxTicksLimit:5} }
+      }, responsive:true, maintainAspectRatio:true }
+    });
+
+    // Donut chart
+    new Chart(document.getElementById('donutChart'), {
+      type:'doughnut',
+      data:{ datasets:[{ data:[41.2,26.7,17.8,14.3],
+        backgroundColor:['#22c55e','#86efac','#6b7280','#4b5563'],
+        borderWidth:0, hoverOffset:4 }]},
+      options:{ cutout:'72%', plugins:{legend:{display:false},tooltip:{
+        callbacks:{ label: ctx => ` ${ctx.raw}%` }
+      }}, responsive:true, maintainAspectRatio:true }
+    });
+
+    // Traffic bar chart
+    const trafCtx = document.getElementById('trafficChart').getContext('2d');
+    const barGrad = trafCtx.createLinearGradient(0,0,0,200);
+    barGrad.addColorStop(0,'rgba(34,197,94,0.9)'); barGrad.addColorStop(1,'rgba(34,197,94,0.4)');
+    new Chart(trafCtx, {
+      type:'bar',
+      data:{ labels, datasets:[{ data:trafficData, backgroundColor:barGrad,
+        borderRadius:4, borderSkipped:false }]},
+      options:{ plugins:{legend:{display:false}}, scales:{
+        x:{ grid:{display:false}, ticks:{maxRotation:0, maxTicksLimit:5} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{maxTicksLimit:5} }
+      }, responsive:true, maintainAspectRatio:true }
+    });
+
+    // ═══════════════════ LIGHT MODE CHARTS (stub) ═══════════════════
+    function updateChartsTheme(theme) { /* future: re-render with light colors */ }
+
+    // ═══════════════════ SIDEBAR CLICK ═══════════════════
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

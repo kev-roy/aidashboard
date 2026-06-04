@@ -1,47 +1,36 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const app = express();
 const PORT = 3000;
 
-app.get('/', (req, res) => {
-  res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Dashboard</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0f0f11;
-      color: #e2e2e8;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #a78bfa, #38bdf8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 0.5rem;
-    }
-    p {
-      color: #888;
-      font-size: 1rem;
-    }
-  </style>
-</head>
-<body>
-  <h1>AI Dashboard</h1>
-  <p>Your app is running.</p>
-</body>
-</html>`);
+const CONFIG_FILE = path.join(__dirname, 'data', 'config.json');
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Save setup config
+app.post('/api/setup', (req, res) => {
+  const config = req.body;
+  if (!config.brand || !config.brand.name) {
+    return res.status(400).json({ ok: false, error: 'Missing brand info' });
+  }
+  fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+  console.log(`✅ Setup complete for: ${config.brand.name}`);
+  res.json({ ok: true });
+});
+
+// Get current config (for dashboard to load)
+app.get('/api/config', (req, res) => {
+  if (fs.existsSync(CONFIG_FILE)) {
+    res.json(JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')));
+  } else {
+    res.json({ setupComplete: false });
+  }
 });
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Setup flow:    http://localhost:${PORT}/setup.html`);
 });

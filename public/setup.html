@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setup — AI Visibility Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 400:'#4ade80', 500:'#22c55e', 600:'#16a34a' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+    input:focus, textarea:focus { outline: none; }
+    .input-field {
+      width: 100%;
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 0.5rem;
+      padding: 0.625rem 0.875rem;
+      color: #f9fafb;
+      font-size: 0.875rem;
+      transition: border-color 0.15s;
+    }
+    .input-field:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+    .input-field::placeholder { color: #6b7280; }
+    .competitor-row { display: flex; gap: 0.5rem; align-items: center; }
+    .prompt-tag {
+      display: inline-flex; align-items: center; gap: 0.375rem;
+      background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3);
+      color: #4ade80; border-radius: 9999px;
+      padding: 0.25rem 0.75rem; font-size: 0.75rem; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .prompt-tag:hover { background: rgba(34,197,94,0.2); }
+    .prompt-tag.selected { background: rgba(34,197,94,0.25); border-color: #22c55e; }
+    .prompt-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #1f2937; border: 1px solid #374151; border-radius: 0.5rem;
+      padding: 0.625rem 0.875rem; font-size: 0.875rem; color: #d1d5db;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center justify-center px-4 py-12">
+
+  <!-- Logo -->
+  <div class="flex items-center gap-2 mb-10">
+    <div class="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
+      <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="text-base font-bold text-white leading-tight">AI Visibility Tracker</div>
+      <div class="text-[10px] text-brand-400 font-medium tracking-widest uppercase">by GreenBananaSEO</div>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="w-full max-w-xl mb-8">
+    <div class="flex items-center justify-between mb-2">
+      <div id="step-label" class="text-sm font-medium text-gray-400">Step 1 of 3</div>
+      <div id="step-title-label" class="text-sm font-semibold text-white">Brand Setup</div>
+    </div>
+    <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+      <div id="progress-bar" class="h-full bg-brand-500 rounded-full transition-all duration-500" style="width: 33.3%"></div>
+    </div>
+    <div class="flex justify-between mt-2">
+      <span class="text-[11px] text-brand-400 font-medium">Brand</span>
+      <span id="step2-label" class="text-[11px] text-gray-500 font-medium">Competitors</span>
+      <span id="step3-label" class="text-[11px] text-gray-500 font-medium">Prompts</span>
+    </div>
+  </div>
+
+  <!-- Card -->
+  <div class="w-full max-w-xl bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
+
+    <!-- ═══ STEP 1: Brand ═══ -->
+    <div id="step1" class="step-panel active">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-white">Tell us about your brand</h2>
+        <p class="text-sm text-gray-400 mt-1">This is how we'll identify your brand in AI responses.</p>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Brand Name *</label>
+          <input id="brand-name" type="text" class="input-field" placeholder="e.g. GreenBananaSEO" />
+          <p class="text-xs text-gray-600 mt-1">Exactly as you want it searched for in AI responses.</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Website Domain *</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">https://</span>
+            <input id="brand-domain" type="text" class="input-field pl-16" placeholder="greenbananaseo.com" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Industry / Niche *</label>
+          <select id="brand-industry" class="input-field">
+            <option value="" disabled selected>Select your industry…</option>
+            <option value="seo">SEO / Digital Marketing Agency</option>
+            <option value="saas">SaaS / Software</option>
+            <option value="ecommerce">E-commerce</option>
+            <option value="legal">Legal Services</option>
+            <option value="healthcare">Healthcare</option>
+            <option value="finance">Finance / Fintech</option>
+            <option value="realestate">Real Estate</option>
+            <option value="consulting">Consulting / Professional Services</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Short Description <span class="text-gray-600 normal-case font-normal">(optional)</span></label>
+          <textarea id="brand-description" class="input-field resize-none" rows="2" placeholder="e.g. AI-focused SEO agency specializing in AEO and brand visibility in AI search"></textarea>
+          <p class="text-xs text-gray-600 mt-1">Helps us suggest better prompts for your industry.</p>
+        </div>
+      </div>
+      <div id="step1-error" class="mt-4 text-xs text-red-400 hidden">Please fill in all required fields.</div>
+    </div>
+
+    <!-- ═══ STEP 2: Competitors ═══ -->
+    <div id="step2" class="step-panel">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-white">Add your competitors</h2>
+        <p class="text-sm text-gray-400 mt-1">Track up to <span class="text-white font-semibold">3 competitors</span> and see how your AI share of voice compares.</p>
+      </div>
+
+      <div class="space-y-3" id="competitor-inputs">
+        <!-- Competitor 1 -->
+        <div class="competitor-row" id="comp-row-1">
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Competitor 1</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">https://</span>
+              <input id="comp1-domain" type="text" class="input-field pl-16" placeholder="competitor.com" />
+            </div>
+          </div>
+          <div class="mt-5">
+            <input id="comp1-name" type="text" class="input-field w-32" placeholder="Name (opt.)" />
+          </div>
+        </div>
+
+        <!-- Competitor 2 -->
+        <div class="competitor-row" id="comp-row-2">
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Competitor 2</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">https://</span>
+              <input id="comp2-domain" type="text" class="input-field pl-16" placeholder="competitor.com" />
+            </div>
+          </div>
+          <div class="mt-5">
+            <input id="comp2-name" type="text" class="input-field w-32" placeholder="Name (opt.)" />
+          </div>
+        </div>
+
+        <!-- Competitor 3 -->
+        <div class="competitor-row" id="comp-row-3">
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Competitor 3</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">https://</span>
+              <input id="comp3-domain" type="text" class="input-field pl-16" placeholder="competitor.com" />
+            </div>
+          </div>
+          <div class="mt-5">
+            <input id="comp3-name" type="text" class="input-field w-32" placeholder="Name (opt.)" />
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5 p-3 bg-gray-800/60 border border-gray-700/50 rounded-lg flex items-start gap-2.5">
+        <svg class="w-4 h-4 text-brand-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/></svg>
+        <p class="text-xs text-gray-400 leading-relaxed">Competitors are detected automatically when they appear in AI responses to your prompts. You can also add them manually here and update them anytime in Settings.</p>
+      </div>
+    </div>
+
+    <!-- ═══ STEP 3: Prompts ═══ -->
+    <div id="step3" class="step-panel">
+      <div class="mb-5">
+        <h2 class="text-xl font-bold text-white">Set up your tracking prompts</h2>
+        <p class="text-sm text-gray-400 mt-1">These are the questions we ask AI engines daily to check if your brand appears. Add your own or pick from our suggestions.</p>
+      </div>
+
+      <!-- Suggested prompts -->
+      <div class="mb-5">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Suggested for your industry</p>
+          <button onclick="selectAllSuggested()" class="text-xs text-brand-400 hover:text-brand-300 font-medium">Add all</button>
+        </div>
+        <div id="suggested-prompts" class="flex flex-wrap gap-2">
+          <!-- filled by JS based on industry -->
+        </div>
+      </div>
+
+      <!-- Custom prompt input -->
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Add a custom prompt</label>
+        <div class="flex gap-2">
+          <input id="custom-prompt-input" type="text" class="input-field flex-1" placeholder="e.g. Who are the best SEO agencies for AI search?" maxlength="200" />
+          <button onclick="addCustomPrompt()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg flex-shrink-0 transition-colors">Add</button>
+        </div>
+        <p class="text-xs text-gray-600 mt-1">Write it as a natural question someone would ask an AI assistant.</p>
+      </div>
+
+      <!-- Added prompts list -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Your prompts <span id="prompt-count" class="text-brand-400 ml-1">0</span> / 20</p>
+          <span id="prompt-min-warning" class="text-xs text-yellow-500 hidden">Add at least 1 prompt to continue.</span>
+        </div>
+        <div id="prompts-added" class="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+          <div id="no-prompts-msg" class="text-xs text-gray-600 py-4 text-center border border-dashed border-gray-800 rounded-lg">
+            No prompts added yet — select from suggestions above or add your own.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Nav buttons ═══ -->
+    <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-800">
+      <button id="btn-back" onclick="prevStep()" class="hidden px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">
+        ← Back
+      </button>
+      <div class="ml-auto flex items-center gap-3">
+        <button id="btn-skip" onclick="nextStep(true)" class="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+          Skip for now
+        </button>
+        <button id="btn-next" onclick="nextStep()" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2">
+          Continue
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <p class="mt-6 text-xs text-gray-600">You can change all of this later in Settings.</p>
+
+<script>
+  // ═══ State ═══
+  let currentStep = 1;
+  const totalSteps = 3;
+  const addedPrompts = [];
+
+  // ═══ Suggested prompts by industry ═══
+  const suggestedByIndustry = {
+    seo: [
+      'What are the best SEO agencies for AI search optimization?',
+      'Who are the top AEO consultants in the US?',
+      'Best tools for tracking brand mentions in AI search',
+      'How do I improve my brand visibility in ChatGPT results?',
+      'What companies specialize in AI citation tracking?',
+      'Who offers the best AI SEO services?',
+      'Best agencies for improving visibility in Google AI Overviews',
+      'Top digital marketing agencies for generative AI search',
+    ],
+    saas: [
+      'What are the best SaaS tools for [your category]?',
+      'Top software platforms for tracking AI visibility',
+      'Best AI-powered tools for marketing teams',
+      'What tools do SEO professionals recommend for AI search?',
+    ],
+    ecommerce: [
+      'Best e-commerce platforms for AI-driven product discovery',
+      'Top tools for tracking brand mentions in AI shopping results',
+      'Which e-commerce brands appear most in AI product recommendations?',
+    ],
+    legal: [
+      'Best law firms for [practice area] in [city]',
+      'Top legal consultants recommended by AI assistants',
+      'Who are the most cited attorneys in AI search results?',
+    ],
+    healthcare: [
+      'Best healthcare providers recommended by AI assistants',
+      'Top medical practices cited in AI health responses',
+      'Which healthcare brands appear in ChatGPT health answers?',
+    ],
+    finance: [
+      'Best financial advisors recommended by AI tools',
+      'Top fintech companies mentioned in AI financial advice',
+      'Which finance brands are cited most in AI search?',
+    ],
+    realestate: [
+      'Best real estate agencies recommended by AI assistants',
+      'Top realtors cited in AI property search results',
+      'Which real estate brands appear in ChatGPT responses?',
+    ],
+    consulting: [
+      'Best consulting firms recommended by AI assistants',
+      'Top business consultants cited in AI search results',
+      'Which consulting brands appear most in AI answers?',
+    ],
+    other: [
+      'What are the top brands in [your industry]?',
+      'Who are the most recommended companies for [your service]?',
+      'Best [your service] providers according to AI assistants',
+    ],
+  };
+
+  // ═══ Step navigation ═══
+  const stepTitles = ['Brand Setup', 'Competitors', 'Prompts'];
+  const progressPcts = ['33.3%', '66.6%', '100%'];
+
+  function showStep(n) {
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(`step${n}`).classList.add('active');
+
+    document.getElementById('step-label').textContent = `Step ${n} of ${totalSteps}`;
+    document.getElementById('step-title-label').textContent = stepTitles[n-1];
+    document.getElementById('progress-bar').style.width = progressPcts[n-1];
+
+    ['step2-label','step3-label'].forEach((id,i) => {
+      const el = document.getElementById(id);
+      el.className = n > i+1 ? 'text-[11px] text-brand-400 font-medium' : n === i+2 ? 'text-[11px] text-brand-400 font-medium' : 'text-[11px] text-gray-500 font-medium';
+    });
+
+    document.getElementById('btn-back').classList.toggle('hidden', n === 1);
+
+    const skipBtn = document.getElementById('btn-skip');
+    skipBtn.classList.toggle('hidden', n !== 2);
+
+    const nextBtn = document.getElementById('btn-next');
+    if (n === totalSteps) {
+      nextBtn.innerHTML = `Launch Dashboard <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>`;
+    } else {
+      nextBtn.innerHTML = `Continue <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>`;
+    }
+
+    if (n === 3) loadSuggestedPrompts();
+    currentStep = n;
+  }
+
+  function nextStep(skip = false) {
+    if (currentStep === 1 && !skip) {
+      if (!validateStep1()) return;
+    }
+    if (currentStep === 3) {
+      if (addedPrompts.length === 0) {
+        document.getElementById('prompt-min-warning').classList.remove('hidden');
+        return;
+      }
+      saveAndLaunch();
+      return;
+    }
+    showStep(currentStep + 1);
+  }
+
+  function prevStep() {
+    if (currentStep > 1) showStep(currentStep - 1);
+  }
+
+  // ═══ Validation ═══
+  function validateStep1() {
+    const name = document.getElementById('brand-name').value.trim();
+    const domain = document.getElementById('brand-domain').value.trim();
+    const industry = document.getElementById('brand-industry').value;
+    const err = document.getElementById('step1-error');
+    if (!name || !domain || !industry) {
+      err.classList.remove('hidden');
+      return false;
+    }
+    err.classList.add('hidden');
+    return true;
+  }
+
+  // ═══ Suggested prompts ═══
+  function loadSuggestedPrompts() {
+    const industry = document.getElementById('brand-industry').value || 'seo';
+    const brandName = document.getElementById('brand-name').value.trim() || 'your brand';
+    const prompts = suggestedByIndustry[industry] || suggestedByIndustry.other;
+    const container = document.getElementById('suggested-prompts');
+    container.innerHTML = '';
+    prompts.forEach(p => {
+      const text = p.replace('[your category]', brandName).replace('[your service]', brandName).replace('[your industry]', document.getElementById('brand-industry').options[document.getElementById('brand-industry').selectedIndex]?.text || 'your industry');
+      const tag = document.createElement('button');
+      tag.className = 'prompt-tag';
+      tag.innerHTML = `<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>${text}`;
+      tag.dataset.text = text;
+      tag.onclick = () => toggleSuggested(tag, text);
+      container.appendChild(tag);
+    });
+  }
+
+  function toggleSuggested(btn, text) {
+    if (btn.classList.contains('selected')) {
+      btn.classList.remove('selected');
+      btn.innerHTML = `<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>${text}`;
+      removePrompt(text);
+    } else {
+      if (addedPrompts.length >= 20) { alert('Maximum 20 prompts reached.'); return; }
+      btn.classList.add('selected');
+      btn.innerHTML = `<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>${text}`;
+      addPrompt(text);
+    }
+  }
+
+  function selectAllSuggested() {
+    document.querySelectorAll('#suggested-prompts .prompt-tag:not(.selected)').forEach(btn => {
+      if (addedPrompts.length < 20) toggleSuggested(btn, btn.dataset.text);
+    });
+  }
+
+  function addCustomPrompt() {
+    const input = document.getElementById('custom-prompt-input');
+    const text = input.value.trim();
+    if (!text) return;
+    if (addedPrompts.length >= 20) { alert('Maximum 20 prompts reached.'); return; }
+    if (addedPrompts.includes(text)) { input.value = ''; return; }
+    addPrompt(text);
+    input.value = '';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('custom-prompt-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addCustomPrompt();
+    });
+  });
+
+  function addPrompt(text) {
+    if (addedPrompts.includes(text)) return;
+    addedPrompts.push(text);
+    renderPrompts();
+  }
+
+  function removePrompt(text) {
+    const i = addedPrompts.indexOf(text);
+    if (i > -1) addedPrompts.splice(i, 1);
+    // deselect tag if present
+    document.querySelectorAll('#suggested-prompts .prompt-tag.selected').forEach(btn => {
+      if (btn.dataset.text === text) {
+        btn.classList.remove('selected');
+        btn.innerHTML = `<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>${text}`;
+      }
+    });
+    renderPrompts();
+  }
+
+  function renderPrompts() {
+    const container = document.getElementById('prompts-added');
+    const noMsg = document.getElementById('no-prompts-msg');
+    document.getElementById('prompt-count').textContent = addedPrompts.length;
+    document.getElementById('prompt-min-warning').classList.add('hidden');
+
+    // Clear existing items (keep no-msg)
+    container.querySelectorAll('.prompt-item').forEach(el => el.remove());
+
+    if (addedPrompts.length === 0) {
+      noMsg.style.display = '';
+    } else {
+      noMsg.style.display = 'none';
+      addedPrompts.forEach((text, i) => {
+        const div = document.createElement('div');
+        div.className = 'prompt-item';
+        div.innerHTML = `
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-[11px] font-bold text-gray-500 w-5 flex-shrink-0">${i+1}</span>
+            <span class="truncate">${text}</span>
+          </div>
+          <button onclick="removePrompt('${text.replace(/'/g, "\\'")}')" class="ml-3 text-gray-600 hover:text-red-400 flex-shrink-0 transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>`;
+        container.appendChild(div);
+      });
+    }
+  }
+
+  // ═══ Save & launch ═══
+  function saveAndLaunch() {
+    const config = {
+      brand: {
+        name: document.getElementById('brand-name').value.trim(),
+        domain: document.getElementById('brand-domain').value.trim().replace(/^https?:\/\//, ''),
+        industry: document.getElementById('brand-industry').value,
+        description: document.getElementById('brand-description').value.trim(),
+      },
+      competitors: [
+        { domain: document.getElementById('comp1-domain').value.trim(), name: document.getElementById('comp1-name').value.trim() || 'Competitor A' },
+        { domain: document.getElementById('comp2-domain').value.trim(), name: document.getElementById('comp2-name').value.trim() || 'Competitor B' },
+        { domain: document.getElementById('comp3-domain').value.trim(), name: document.getElementById('comp3-name').value.trim() || 'Competitor C' },
+      ].filter(c => c.domain),
+      prompts: addedPrompts,
+      setupComplete: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    fetch('/api/setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    }).then(r => r.json()).then(res => {
+      if (res.ok) window.location.href = '/';
+    }).catch(() => {
+      // fallback: save to localStorage and redirect
+      localStorage.setItem('avt_config', JSON.stringify(config));
+      window.location.href = '/';
+    });
+  }
+</script>
+</body>
+</html>
