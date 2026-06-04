@@ -40,18 +40,23 @@ function saveResults(results) {
  */
 function analyzeResponse(text, brandName, brandDomain, competitors = []) {
   const lower = text.toLowerCase();
-  const brandLower = brandName.toLowerCase();
+  // Normalize brand name: strip trailing punctuation, try with/without spaces
+  const brandClean = brandName.toLowerCase().replace(/[.\-_,]+$/, '').trim();
+  const brandNoSpace = brandClean.replace(/\s+/g, '');
+  const domainClean = brandDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
 
   // Brand mentioned?
-  const mentioned = lower.includes(brandLower) ||
-    lower.includes(brandDomain.toLowerCase().replace(/^www\./, ''));
+  const mentioned = lower.includes(brandClean) ||
+    lower.includes(brandNoSpace) ||
+    lower.includes(domainClean);
 
   // Rough position: which sentence/paragraph first mentions the brand
   let position = null;
   if (mentioned) {
     const sentences = text.split(/(?<=[.!?])\s+/);
     for (let i = 0; i < sentences.length; i++) {
-      if (sentences[i].toLowerCase().includes(brandLower)) {
+      const s = sentences[i].toLowerCase();
+      if (s.includes(brandClean) || s.includes(brandNoSpace) || s.includes(domainClean)) {
         position = i + 1;
         break;
       }
@@ -67,7 +72,9 @@ function analyzeResponse(text, brandName, brandDomain, competitors = []) {
 
   // Competitor mentions
   const competitorMentions = competitors
-    .filter(c => c.domain && lower.includes(c.domain.toLowerCase().replace(/^www\./, '')))
+    .filter(c => c.domain && lower.includes(
+      c.domain.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '')
+    ))
     .map(c => c.name || c.domain);
 
   // Sentiment (simple keyword scoring)
@@ -75,8 +82,8 @@ function analyzeResponse(text, brandName, brandDomain, competitors = []) {
   const negativeWords = ['avoid','poor','bad','worst','unreliable','scam','overpriced','slow'];
   let sentimentScore = 0;
   if (mentioned) {
-    // look at the 50 words surrounding the brand mention
-    const idx = lower.indexOf(brandLower);
+    // look at the words surrounding the brand mention
+    const idx = lower.indexOf(brandClean) >= 0 ? lower.indexOf(brandClean) : lower.indexOf(brandNoSpace);
     const window = lower.slice(Math.max(0, idx - 200), idx + 200);
     positiveWords.forEach(w => { if (window.includes(w)) sentimentScore++; });
     negativeWords.forEach(w => { if (window.includes(w)) sentimentScore--; });
@@ -137,19 +144,46 @@ async function runSerpApiAIOverview(prompt) {
   const data = await res.json();
   if (!res.ok) throw new Error(`SerpApi error: ${JSON.stringify(data)}`);
 
-  // Extract AI Overview text if present
-  const aiOverview = data.ai_overview?.text_blocks?.map(b => b.snippet || '').join(' ')
-    || data.answer_box?.answer
-    || data.answer_box?.snippet
-    || '';
+  let aiOverviewText = '';
+  let citedSources = [];
 
-  // Also grab organic result URLs for citation tracking
-  const organicURLs = (data.organic_results || []).slice(0, 5).map(r => r.link).filter(Boolean);
+  // Step 1: AI Overview returns a page_token — fetch the full content via serpapi_link
+  if (data.ai_overview?.serpapi_link) {
+    try {
+      const aioRes  = await fetch(data.ai_overview.serpapi_link + `&api_key=${process.env.SERPAPI_KEY}`);
+      const aioData = await aioRes.json();
+      // Extract all text blocks
+      const blocks = aioData.ai_overview?.blocks || aioData.blocks || [];
+      aiOverviewText = blocks.map(b => b.snippet || b.text || '').filter(Boolean).join(' ');
+      // Extract cited source URLs
+      citedSources = blocks.flatMap(b => (b.references || []).map(r => r.link)).filter(Boolean);
+    } catch (e) {
+      // fallback silently
+    }
+  }
 
-  return { text: aiOverview, organicURLs };
+  // Step 2: Fallback to answer_box if no AI Overview
+  if (!aiOverviewText) {
+    aiOverviewText = data.answer_box?.answer || data.answer_box?.snippet || '';
+  }
+
+  // Step 3: Build a synthetic text from organic results so brand detection works
+  // (Google blocks AIO content from SerpApi datacenters — organic position is a reliable proxy)
+  const organicResults = data.organic_results || [];
+  const organicURLs = organicResults.slice(0, 10).map(r => r.link).filter(Boolean);
+  const organicText = organicResults.slice(0, 10).map((r, i) =>
+    `${i + 1}. ${r.title || ''} — ${r.snippet || ''} ${r.link || ''}`
+  ).join('\n');
+
+  // Combine AIO text + organic text for analysis
+  const combinedText = [aiOverviewText, organicText].filter(Boolean).join('\n');
+
+  return { text: combinedText, organicURLs, citedSources, hasAIO: !!aiOverviewText };
 }
 
-// ── Run one prompt across all platforms ──────────────────────────────────────
+// ── Run one prompt across all platforms (3 runs each, aggregated) ────────────
+
+const RUNS_PER_PLATFORM = 3;
 
 async function runPrompt(prompt, config) {
   const { brand, competitors = [] } = config;
@@ -158,37 +192,63 @@ async function runPrompt(prompt, config) {
   const platformResults = {};
 
   const platforms = [
-    { key: 'chatgpt',      label: 'ChatGPT',           fn: () => runChatGPT(prompt) },
-    { key: 'claude',       label: 'Claude',             fn: () => runClaude(prompt) },
-    { key: 'perplexity',   label: 'Perplexity',         fn: () => runPerplexity(prompt) },
-    { key: 'google_aio',   label: 'Google AI Overview', fn: () => runSerpApiAIOverview(prompt) },
+    { key: 'chatgpt',    label: 'ChatGPT',           fn: () => runChatGPT(prompt),           isSearch: false },
+    { key: 'claude',     label: 'Claude',             fn: () => runClaude(prompt),             isSearch: false },
+    { key: 'perplexity', label: 'Perplexity',         fn: () => runPerplexity(prompt),         isSearch: false },
+    { key: 'google_aio', label: 'Google AI Overview', fn: () => runSerpApiAIOverview(prompt),  isSearch: true  },
   ];
 
   for (const p of platforms) {
-    try {
-      process.stdout.write(`  [${p.label}] querying...`);
-      let text;
-      let extra = {};
+    // Google AIO is deterministic (live web) — run once. LLMs are non-deterministic — run 3x.
+    const runsNeeded = p.isSearch ? 1 : RUNS_PER_PLATFORM;
+    const runResults = [];
 
-      if (p.key === 'google_aio') {
-        const result = await p.fn();
-        text = result.text;
-        extra.organicURLs = result.organicURLs;
-      } else {
-        text = await p.fn();
+    process.stdout.write(`  [${p.label}] ${runsNeeded > 1 ? `${runsNeeded} runs` : '1 run'}...`);
+
+    for (let i = 0; i < runsNeeded; i++) {
+      try {
+        let text, extra = {};
+        if (p.isSearch) {
+          const result = await p.fn();
+          text = result.text;
+          extra = { organicURLs: result.organicURLs, citedSources: result.citedSources };
+        } else {
+          text = await p.fn();
+        }
+        const analysis = analyzeResponse(text, brand.name, brand.domain, competitors);
+        runResults.push({ response: text.slice(0, 2000), ...analysis, ...extra });
+        if (i < runsNeeded - 1) await new Promise(r => setTimeout(r, 1000)); // brief pause between runs
+      } catch (err) {
+        runResults.push({ error: err.message, mentioned: false, position: null });
       }
-
-      const analysis = analyzeResponse(text, brand.name, brand.domain, competitors);
-      platformResults[p.key] = {
-        response: text.slice(0, 2000), // store up to 2000 chars
-        ...analysis,
-        ...extra,
-      };
-      console.log(` ✓ mentioned=${analysis.mentioned} position=${analysis.position}`);
-    } catch (err) {
-      console.log(` ✗ error: ${err.message}`);
-      platformResults[p.key] = { error: err.message, mentioned: false, position: null };
     }
+
+    // Aggregate: mentioned if true in ANY run, position = avg of non-null positions
+    const successRuns = runResults.filter(r => !r.error);
+    const mentionedRuns = runResults.filter(r => r.mentioned);
+    const positions = runResults.map(r => r.position).filter(Boolean);
+    const allCitedURLs = [...new Set(runResults.flatMap(r => r.citedBrandURLs || []))];
+    const allCompetitors = [...new Set(runResults.flatMap(r => r.competitorMentions || []))];
+    const sentiments = runResults.filter(r => r.sentiment).map(r => r.sentiment);
+    const topSentiment = ['positive','neutral','negative'].find(s => sentiments.filter(x=>x===s).length === sentiments.filter(x=>x===sentiments[0]).length) || 'neutral';
+
+    platformResults[p.key] = {
+      response: runResults.find(r => r.mentioned)?.response || runResults[0]?.response || '',
+      mentioned: mentionedRuns.length > 0,
+      mentionRate: `${mentionedRuns.length}/${runsNeeded}`,
+      position: positions.length ? Math.round(positions.reduce((a,b)=>a+b,0)/positions.length) : null,
+      citedBrandURLs: allCitedURLs,
+      competitorMentions: allCompetitors,
+      sentiment: topSentiment,
+      runs: runsNeeded,
+      successRuns: successRuns.length,
+      error: successRuns.length === 0 ? runResults[0]?.error : null,
+      ...(runResults[0]?.organicURLs ? { organicURLs: runResults[0].organicURLs } : {}),
+      ...(runResults[0]?.citedSources ? { citedSources: runResults[0].citedSources } : {}),
+    };
+
+    const r = platformResults[p.key];
+    console.log(` ✓ mentioned=${r.mentioned} (${r.mentionRate}) pos=${r.position ?? 'n/a'}`);
   }
 
   return { runId, timestamp, prompt, platformResults };
