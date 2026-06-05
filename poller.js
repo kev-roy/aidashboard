@@ -96,13 +96,54 @@ function analyzeResponse(text, brandName, brandDomain, competitors = []) {
 // ── Platform runners ──────────────────────────────────────────────────────────
 
 async function runChatGPT(prompt) {
-  const res = await openai.chat.completions.create({
+  // Use the Responses API with web_search_preview tool + high context.
+  // This matches exactly what ChatGPT UI does (live Bing search, deep results).
+  // Prompt is rewritten to a ranked-list format — "boston seo agency" (lookup)
+  // returns a local-pack style snippet; "top X ranked list" forces enumeration
+  // which is where well-established brands like GreenBananaSEO consistently appear.
+  const searchPrompt = rewriteAsRankedQuery(prompt);
+
+  const res = await openai.responses.create({
     model: 'gpt-4o',
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: 1000,
-    temperature: 0.3,
+    tools: [{ type: 'web_search_preview', search_context_size: 'high' }],
+    input: searchPrompt,
   });
-  return res.choices[0].message.content || '';
+
+  const text = res.output_text || '';
+
+  // Extract cited URLs from output items
+  const citedURLs = [];
+  if (res.output) {
+    for (const item of res.output) {
+      if (item.type === 'message' && item.content) {
+        for (const block of item.content) {
+          if (block.annotations) {
+            for (const ann of block.annotations) {
+              if (ann.type === 'url_citation' && ann.url) citedURLs.push(ann.url);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return { text, citedURLs };
+}
+
+/**
+ * Rewrites a short keyword prompt into a ranked-list query.
+ * "boston seo agency" → "top boston seo agencies ranked list 2026"
+ * This forces ChatGPT to enumerate rather than return a local-pack snippet,
+ * which is where established brands appear consistently.
+ */
+function rewriteAsRankedQuery(prompt) {
+  const lower = prompt.toLowerCase().trim();
+  // Already a full question — leave it
+  if (lower.includes('best') || lower.includes('top') || lower.includes('ranked') || lower.includes('who') || lower.includes('what')) {
+    return prompt + ' — give me a comprehensive ranked list';
+  }
+  // Short keyword — expand it
+  return `What are the top ${prompt}? Give me a comprehensive ranked list of the best options.`;
 }
 
 async function runClaude(prompt) {
@@ -192,15 +233,14 @@ async function runPrompt(prompt, config) {
   const platformResults = {};
 
   const platforms = [
-    { key: 'chatgpt',    label: 'ChatGPT',           fn: () => runChatGPT(prompt),           isSearch: false },
-    { key: 'claude',     label: 'Claude',             fn: () => runClaude(prompt),             isSearch: false },
-    { key: 'perplexity', label: 'Perplexity',         fn: () => runPerplexity(prompt),         isSearch: false },
-    { key: 'google_aio', label: 'Google AI Overview', fn: () => runSerpApiAIOverview(prompt),  isSearch: true  },
+    { key: 'chatgpt',    label: 'ChatGPT',           fn: () => runChatGPT(prompt),           runs: 2 }, // Responses API — 2 runs, take best
+    { key: 'claude',     label: 'Claude',             fn: () => runClaude(prompt),             runs: 3 }, // Non-deterministic, no web search
+    { key: 'perplexity', label: 'Perplexity',         fn: () => runPerplexity(prompt),         runs: 3 }, // Non-deterministic
+    { key: 'google_aio', label: 'Google AI Overview', fn: () => runSerpApiAIOverview(prompt),  runs: 1 }, // Deterministic (live web)
   ];
 
   for (const p of platforms) {
-    // Google AIO is deterministic (live web) — run once. LLMs are non-deterministic — run 3x.
-    const runsNeeded = p.isSearch ? 1 : RUNS_PER_PLATFORM;
+    const runsNeeded = p.runs || RUNS_PER_PLATFORM;
     const runResults = [];
 
     process.stdout.write(`  [${p.label}] ${runsNeeded > 1 ? `${runsNeeded} runs` : '1 run'}...`);
@@ -208,10 +248,14 @@ async function runPrompt(prompt, config) {
     for (let i = 0; i < runsNeeded; i++) {
       try {
         let text, extra = {};
-        if (p.isSearch) {
+        if (p.key === 'google_aio') {
           const result = await p.fn();
           text = result.text;
-          extra = { organicURLs: result.organicURLs, citedSources: result.citedSources };
+          extra = { organicURLs: result.organicURLs, citedSources: result.citedSources, hasAIO: result.hasAIO };
+        } else if (p.key === 'chatgpt') {
+          const result = await p.fn();
+          text = result.text;
+          extra = { citedURLs: result.citedURLs || [] };
         } else {
           text = await p.fn();
         }
