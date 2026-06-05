@@ -542,16 +542,36 @@
               <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
               Sign in with Google
             </button>
-            <div id="ga4-setup" class="hidden mt-3 pt-3 border-t border-gray-800">
-              <p class="text-xs text-gray-500 mb-2">First-time setup only — paste your OAuth credentials from <a href="https://console.cloud.google.com" target="_blank" class="text-brand-400 hover:underline">console.cloud.google.com</a>:</p>
-              <div class="space-y-2">
-                <input id="ga4-client-id" class="input-field" placeholder="OAuth Client ID" />
-                <input id="ga4-client-secret" class="input-field" placeholder="OAuth Client Secret" type="password" />
+          </div>
+
+          <!-- First-time setup modal overlay -->
+          <div id="ga4-setup-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+            <div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-xl">📊</div>
+                <div>
+                  <h3 class="text-base font-bold text-white">Connect Google Analytics</h3>
+                  <p class="text-xs text-gray-500">One-time setup — takes about 3 minutes</p>
+                </div>
               </div>
-              <button onclick="saveGA4Creds()" class="w-full mt-2 py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold rounded-lg">Save credentials & Sign in</button>
-              <p class="text-[10px] text-gray-600 mt-2 text-center"><a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="hover:text-gray-400">How to get credentials →</a></p>
+              <div class="bg-gray-800 rounded-xl p-4 mb-4 space-y-3 text-xs text-gray-400">
+                <p class="text-gray-300 font-semibold text-sm">Google requires a free app registration to allow sign-in. Do this once and you're set forever:</p>
+                <div class="flex gap-2.5"><span class="w-5 h-5 rounded-full bg-orange-500/30 text-orange-400 flex items-center justify-center font-bold flex-shrink-0 text-[11px]">1</span><p>Go to <a href="https://console.cloud.google.com" target="_blank" class="text-brand-400 hover:underline font-medium">console.cloud.google.com</a> → Create a project → Enable <strong class="text-gray-300">Google Analytics Data API</strong></p></div>
+                <div class="flex gap-2.5"><span class="w-5 h-5 rounded-full bg-orange-500/30 text-orange-400 flex items-center justify-center font-bold flex-shrink-0 text-[11px]">2</span><p>APIs & Services → Credentials → <strong class="text-gray-300">Create OAuth 2.0 Client ID</strong> → Web app → add redirect URI: <code class="bg-gray-900 px-1 py-0.5 rounded text-brand-300">http://localhost:3000/auth/ga4/callback</code></p></div>
+                <div class="flex gap-2.5"><span class="w-5 h-5 rounded-full bg-orange-500/30 text-orange-400 flex items-center justify-center font-bold flex-shrink-0 text-[11px]">3</span><p>Copy the <strong class="text-gray-300">Client ID</strong> and <strong class="text-gray-300">Client Secret</strong> and paste below — then click Sign in</p></div>
+              </div>
+              <div class="space-y-2 mb-3">
+                <input id="ga4-client-id" class="input-field" placeholder="Client ID  (ends in .apps.googleusercontent.com)" />
+                <input id="ga4-client-secret" class="input-field" placeholder="Client Secret" type="password" />
+              </div>
+              <div class="flex gap-2">
+                <button onclick="saveGA4Creds()" class="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white hover:bg-gray-100 text-gray-800 text-sm font-semibold rounded-lg">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                  Save & Sign in with Google
+                </button>
+                <button onclick="document.getElementById('ga4-setup-modal').classList.add('hidden')" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-400 text-sm rounded-lg">Cancel</button>
+              </div>
             </div>
-            <button onclick="toggleGA4Setup()" id="ga4-creds-toggle" class="w-full mt-2 text-xs text-gray-600 hover:text-gray-400 text-center">First time? Set up OAuth credentials</button>
           </div>
 
           <!-- Connected state -->
@@ -1225,11 +1245,10 @@ function updateGA4Badge(connected) {
 }
 
 function startGA4OAuth() {
-  // Check if credentials are saved; if not, show the setup form
   fetch('/api/ga4/status').then(r=>r.json()).then(d=>{
     if (d.hasClientId) {
-      // Credentials exist — open OAuth popup directly
-      const popup = window.open('/auth/ga4','ga4auth','width=600,height=700');
+      // Credentials already saved — just open the sign-in popup
+      const popup = window.open('/auth/ga4','ga4auth','width=520,height=640,left=200,top=100');
       window.addEventListener('message', async(e)=>{
         if(e.data==='ga4_connected'){
           popup?.close();
@@ -1237,11 +1256,14 @@ function startGA4OAuth() {
         }
       },{once:true});
     } else {
-      // No credentials yet — show the setup form
-      document.getElementById('ga4-setup')?.classList.remove('hidden');
-      document.getElementById('ga4-creds-toggle')?.classList.add('hidden');
+      // First time — show the setup modal
+      document.getElementById('ga4-setup-modal')?.classList.remove('hidden');
     }
   });
+}
+
+function toggleGA4Setup() {
+  document.getElementById('ga4-setup-modal')?.classList.toggle('hidden');
 }
 
 function updateBingBadge(connected) {
@@ -1270,22 +1292,21 @@ function toggleBingSetup() {
 async function saveGA4Creds() {
   const clientId     = document.getElementById('ga4-client-id')?.value.trim();
   const clientSecret = document.getElementById('ga4-client-secret')?.value.trim();
-  if (!clientId || !clientSecret) { alert('Enter both Client ID and Secret'); return; }
-  // Save to server env (POST to a helper endpoint)
+  if (!clientId || !clientSecret) { alert('Please enter both Client ID and Client Secret'); return; }
   const r = await fetch('/api/ga4/set-creds', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ clientId, clientSecret }),
   });
   const d = await r.json();
-  if (!d.ok) { alert('Error: ' + d.error); return; }
-  // Open OAuth popup
-  const popup = window.open('/auth/ga4', 'ga4auth', 'width=600,height=700');
+  if (!d.ok) { alert('Error saving credentials: ' + d.error); return; }
+  // Close modal and open Google sign-in popup
+  document.getElementById('ga4-setup-modal')?.classList.add('hidden');
+  const popup = window.open('/auth/ga4', 'ga4auth', 'width=520,height=640,left=200,top=100');
   window.addEventListener('message', async (e) => {
     if (e.data === 'ga4_connected') {
-      popup.close();
+      popup?.close();
       updateGA4Badge(true);
-      document.getElementById('ga4-setup')?.classList.add('hidden');
     }
   }, { once: true });
 }
