@@ -1154,7 +1154,7 @@ async function saveSettings() {
   _config.brand.industry = document.getElementById('set-brand-industry').value;
   _config.competitors = [0,1,2].map(i=>({
     domain: document.getElementById(`set-comp${i+1}-domain`).value.trim(),
-    name:   document.getElementById(`set-comp${i+1}-name`).value.trim()||`Competitor ${i+1}`,
+    name:   document.getElementById(`set-comp${i+1}-name`).value.trim() || document.getElementById(`set-comp${i+1}-domain`).value.trim(),
   })).filter(c=>c.domain);
   await fetch('/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_config)});
   document.getElementById('settings-saved').classList.remove('hidden');

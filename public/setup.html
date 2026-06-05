@@ -484,9 +484,9 @@
         description: document.getElementById('brand-description').value.trim(),
       },
       competitors: [
-        { domain: document.getElementById('comp1-domain').value.trim(), name: document.getElementById('comp1-name').value.trim() || 'Competitor A' },
-        { domain: document.getElementById('comp2-domain').value.trim(), name: document.getElementById('comp2-name').value.trim() || 'Competitor B' },
-        { domain: document.getElementById('comp3-domain').value.trim(), name: document.getElementById('comp3-name').value.trim() || 'Competitor C' },
+        { domain: document.getElementById('comp1-domain').value.trim(), name: document.getElementById('comp1-name').value.trim() || document.getElementById('comp1-domain').value.trim() },
+        { domain: document.getElementById('comp2-domain').value.trim(), name: document.getElementById('comp2-name').value.trim() || document.getElementById('comp2-domain').value.trim() },
+        { domain: document.getElementById('comp3-domain').value.trim(), name: document.getElementById('comp3-name').value.trim() || document.getElementById('comp3-domain').value.trim() },
       ].filter(c => c.domain),
       prompts: addedPrompts,
       setupComplete: true,
