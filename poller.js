@@ -40,15 +40,31 @@ function saveResults(results) {
  */
 function analyzeResponse(text, brandName, brandDomain, competitors = []) {
   const lower = text.toLowerCase();
-  // Normalize brand name: strip trailing punctuation, try with/without spaces
-  const brandClean = brandName.toLowerCase().replace(/[.\-_,]+$/, '').trim();
+  // Normalize brand name: strip trailing punctuation
+  const brandClean   = brandName.toLowerCase().replace(/[.\-_,]+$/, '').trim();
   const brandNoSpace = brandClean.replace(/\s+/g, '');
-  const domainClean = brandDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+  const domainClean  = brandDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+
+  // Also generate camelCase-split variants:
+  // "greenbananaseo" → ["green", "banana", "seo"] → "green banana seo", "greenbanana seo"
+  const splitVariants = [];
+  // Split on uppercase boundaries (handles "GreenBananaSEO" → "green banana seo")
+  const camelSplit = brandName.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').toLowerCase().trim();
+  if (camelSplit !== brandClean) splitVariants.push(camelSplit);
+  // Try "greenbanana seo" (split only last word off)
+  if (brandNoSpace.length > 4) {
+    ['seo','agency','marketing','digital'].forEach(suffix => {
+      if (brandNoSpace.endsWith(suffix)) {
+        splitVariants.push(brandNoSpace.slice(0, -suffix.length) + ' ' + suffix);
+      }
+    });
+  }
 
   // Brand mentioned?
-  const mentioned = lower.includes(brandClean) ||
-    lower.includes(brandNoSpace) ||
-    lower.includes(domainClean);
+  const mentioned = lower.includes(brandClean)
+    || lower.includes(brandNoSpace)
+    || lower.includes(domainClean)
+    || splitVariants.some(v => lower.includes(v));
 
   // Rough position: which sentence/paragraph first mentions the brand
   let position = null;
@@ -56,7 +72,7 @@ function analyzeResponse(text, brandName, brandDomain, competitors = []) {
     const sentences = text.split(/(?<=[.!?])\s+/);
     for (let i = 0; i < sentences.length; i++) {
       const s = sentences[i].toLowerCase();
-      if (s.includes(brandClean) || s.includes(brandNoSpace) || s.includes(domainClean)) {
+      if (s.includes(brandClean) || s.includes(brandNoSpace) || s.includes(domainClean) || splitVariants.some(v=>s.includes(v))) {
         position = i + 1;
         break;
       }
@@ -83,7 +99,7 @@ function analyzeResponse(text, brandName, brandDomain, competitors = []) {
   let sentimentScore = 0;
   if (mentioned) {
     // look at the words surrounding the brand mention
-    const idx = lower.indexOf(brandClean) >= 0 ? lower.indexOf(brandClean) : lower.indexOf(brandNoSpace);
+    const idx = [brandClean, brandNoSpace, domainClean, ...splitVariants].reduce((found, v) => found >= 0 ? found : lower.indexOf(v), -1);
     const window = lower.slice(Math.max(0, idx - 200), idx + 200);
     positiveWords.forEach(w => { if (window.includes(w)) sentimentScore++; });
     negativeWords.forEach(w => { if (window.includes(w)) sentimentScore--; });
@@ -147,12 +163,47 @@ function rewriteAsRankedQuery(prompt) {
 }
 
 async function runClaude(prompt) {
+  // Use claude-sonnet-4-6 with web_search tool — matches exactly what Claude.ai
+  // does when it shows "Searched the web" (the same model/behavior in the screenshot)
+  const searchPrompt = rewriteAsRankedQuery(prompt);
+
   const res = await anthropic.messages.create({
-    model: 'claude-opus-4-5',
-    max_tokens: 1000,
-    messages: [{ role: 'user', content: prompt }],
+    model: 'claude-sonnet-4-6',
+    max_tokens: 4096,  // Web search responses are long — needs room for full ranked lists
+    tools: [{
+      type: 'web_search_20250305',
+      name: 'web_search',
+      max_uses: 5,
+    }],
+    messages: [{ role: 'user', content: searchPrompt }],
   });
-  return res.content[0].type === 'text' ? res.content[0].text : '';
+
+  // Concatenate all text blocks — Claude web search returns 'server_tool_use',
+  // 'web_search_tool_result', and 'text' blocks interleaved. We want all text.
+  const text = res.content
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('\n');
+
+  // Also pull text from web_search_tool_result content blocks (search snippets)
+  // so brand detection works even if answer was truncated
+  const snippetText = res.content
+    .filter(b => b.type === 'web_search_tool_result')
+    .flatMap(b => b.content || [])
+    .filter(c => c.type === 'document')
+    .map(c => c.document?.text || c.text || '')
+    .join('\n');
+
+  const fullText = [text, snippetText].filter(Boolean).join('\n');
+
+  // Extract cited URLs from search result documents
+  const citedURLs = res.content
+    .filter(b => b.type === 'web_search_tool_result')
+    .flatMap(b => b.content || [])
+    .filter(c => c.type === 'document' && c.source?.url)
+    .map(c => c.source.url);
+
+  return { text: fullText, citedURLs };
 }
 
 async function runPerplexity(prompt) {
@@ -233,10 +284,10 @@ async function runPrompt(prompt, config) {
   const platformResults = {};
 
   const platforms = [
-    { key: 'chatgpt',    label: 'ChatGPT',           fn: () => runChatGPT(prompt),           runs: 2 }, // Responses API — 2 runs, take best
-    { key: 'claude',     label: 'Claude',             fn: () => runClaude(prompt),             runs: 3 }, // Non-deterministic, no web search
-    { key: 'perplexity', label: 'Perplexity',         fn: () => runPerplexity(prompt),         runs: 3 }, // Non-deterministic
-    { key: 'google_aio', label: 'Google AI Overview', fn: () => runSerpApiAIOverview(prompt),  runs: 1 }, // Deterministic (live web)
+    { key: 'chatgpt',    label: 'ChatGPT',           fn: () => runChatGPT(prompt),           runs: 2 }, // Responses API + web search
+    { key: 'claude',     label: 'Claude',             fn: () => runClaude(prompt),             runs: 2 }, // claude-sonnet-4-6 + web search
+    { key: 'perplexity', label: 'Perplexity',         fn: () => runPerplexity(prompt),         runs: 3 }, // Live web search built-in
+    { key: 'google_aio', label: 'Google AI Overview', fn: () => runSerpApiAIOverview(prompt),  runs: 1 }, // Deterministic (SerpApi)
   ];
 
   for (const p of platforms) {
@@ -252,7 +303,8 @@ async function runPrompt(prompt, config) {
           const result = await p.fn();
           text = result.text;
           extra = { organicURLs: result.organicURLs, citedSources: result.citedSources, hasAIO: result.hasAIO };
-        } else if (p.key === 'chatgpt') {
+        } else if (p.key === 'chatgpt' || p.key === 'claude') {
+          // Both now return { text, citedURLs } from web search APIs
           const result = await p.fn();
           text = result.text;
           extra = { citedURLs: result.citedURLs || [] };
