@@ -253,15 +253,105 @@
   </div>
 
   <!-- ════════════ PAGE: REFERRAL TRAFFIC ════════════ -->
-  <div id="page-traffic" class="page p-8">
-    <div class="bg-brand-500/10 border border-brand-500/20 rounded-xl p-4 mb-6 flex items-start gap-3">
-      <svg class="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-      <div><p class="text-sm font-semibold text-brand-300">GA4 Integration Coming Soon</p><p class="text-xs text-gray-400 mt-1">Connect Google Analytics 4 in Settings to see real referral traffic from AI platforms. Currently showing AI mention signals as a proxy.</p></div>
+  <div id="page-traffic" class="page p-8 space-y-6">
+
+    <!-- Connection status bar -->
+    <div id="traffic-connect-bar" class="hidden bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <svg class="w-5 h-5 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <p class="text-sm text-yellow-300">Connect <strong>GA4</strong> and <strong>Bing Webmaster Tools</strong> in Settings to see real traffic data here.</p>
+      </div>
+      <button onclick="navigate('settings')" class="text-xs font-semibold text-yellow-400 hover:text-yellow-300 border border-yellow-500/40 px-3 py-1.5 rounded-lg">Open Settings →</button>
     </div>
-    <div class="grid grid-cols-4 gap-4 mb-6" id="traffic-stats"></div>
-    <div class="grid grid-cols-2 gap-4">
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">AI Mention Signals Over Time</h3><div class="h-52"><canvas id="traffic-line"></canvas></div></div>
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Signal Volume by Platform</h3><div class="h-52"><canvas id="traffic-platform-bar"></canvas></div></div>
+
+    <!-- GA4 Section -->
+    <div id="ga4-traffic-section">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-base">📊</span>
+          <h2 class="text-base font-semibold text-white">Google Analytics 4 — AI Referral Traffic</h2>
+          <span id="ga4-traffic-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-500 font-medium">Not connected</span>
+        </div>
+        <button onclick="fetchGA4Data()" id="ga4-refresh-btn" class="hidden text-xs text-brand-400 hover:text-brand-300 font-medium border border-brand-500/30 px-3 py-1.5 rounded-lg">↻ Refresh</button>
+      </div>
+
+      <!-- GA4 stat cards -->
+      <div class="grid grid-cols-4 gap-4 mb-4" id="ga4-stat-cards">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 opacity-40"><p class="text-xs text-gray-400">AI Sessions</p><p class="text-2xl font-bold text-white mt-1">—</p></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 opacity-40"><p class="text-xs text-gray-400">AI Users</p><p class="text-2xl font-bold text-white mt-1">—</p></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 opacity-40"><p class="text-xs text-gray-400">Conversions</p><p class="text-2xl font-bold text-white mt-1">—</p></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 opacity-40"><p class="text-xs text-gray-400">Top AI Source</p><p class="text-lg font-bold text-white mt-1 truncate">—</p></div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 col-span-2">
+          <h3 class="text-sm font-semibold text-white mb-4">AI Sessions Over Time</h3>
+          <div class="h-48"><canvas id="ga4-sessions-chart"></canvas></div>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <h3 class="text-sm font-semibold text-white mb-4">Sessions by AI Source</h3>
+          <div id="ga4-sources-list" class="space-y-2">
+            <p class="text-xs text-gray-600 py-6 text-center">Connect GA4 to see source breakdown</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top landing pages from AI traffic -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden mt-4">
+        <div class="px-5 py-4 border-b border-gray-800"><h3 class="text-sm font-semibold text-white">Top Landing Pages from AI Traffic</h3></div>
+        <table class="w-full text-xs">
+          <thead><tr class="border-b border-gray-800 text-gray-500 uppercase text-[10px]">
+            <th class="px-5 py-3 text-left">Page</th><th class="px-5 py-3 text-left">Sessions</th><th class="px-5 py-3 text-left">Primary AI Source</th>
+          </tr></thead>
+          <tbody id="ga4-pages-table"><tr><td colspan="3" class="px-5 py-6 text-center text-gray-600 text-xs">Connect GA4 to see landing page data</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bing Section -->
+    <div id="bing-traffic-section">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-base">🔍</span>
+          <h2 class="text-base font-semibold text-white">Bing Webmaster Tools — Copilot AI Prompts</h2>
+          <span id="bing-traffic-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-500 font-medium">Not connected</span>
+        </div>
+        <button onclick="fetchBingData()" id="bing-refresh-btn" class="hidden text-xs text-brand-400 hover:text-brand-300 font-medium border border-brand-500/30 px-3 py-1.5 rounded-lg">↻ Refresh</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-white">Copilot AI Prompts</h3>
+            <span class="text-xs text-gray-500" id="bing-prompt-count"></span>
+          </div>
+          <table class="w-full text-xs">
+            <thead><tr class="border-b border-gray-800 text-gray-500 uppercase text-[10px]">
+              <th class="px-5 py-3 text-left">Query / Prompt</th><th class="px-5 py-3 text-right">Impressions</th><th class="px-5 py-3 text-right">Clicks</th><th class="px-5 py-3 text-right">Avg Pos.</th>
+            </tr></thead>
+            <tbody id="bing-prompts-table"><tr><td colspan="4" class="px-5 py-6 text-center text-gray-600">Connect Bing WMT to see AI prompts</td></tr></tbody>
+          </table>
+        </div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-800"><h3 class="text-sm font-semibold text-white">Top Pages in Bing AI</h3></div>
+          <table class="w-full text-xs">
+            <thead><tr class="border-b border-gray-800 text-gray-500 uppercase text-[10px]">
+              <th class="px-5 py-3 text-left">Page</th><th class="px-5 py-3 text-right">Impressions</th><th class="px-5 py-3 text-right">Clicks</th>
+            </tr></thead>
+            <tbody id="bing-pages-table"><tr><td colspan="3" class="px-5 py-6 text-center text-gray-600">Connect Bing WMT to see page data</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fallback: AI mention signals (always shown) -->
+    <div>
+      <h2 class="text-base font-semibold text-white mb-4">AI Mention Signals (from polls)</h2>
+      <div class="grid grid-cols-4 gap-4 mb-4" id="traffic-stats"></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Mention Signals Over Time</h3><div class="h-48"><canvas id="traffic-line"></canvas></div></div>
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Signals by Platform</h3><div class="h-48"><canvas id="traffic-platform-bar"></canvas></div></div>
+      </div>
     </div>
   </div>
 
@@ -420,6 +510,83 @@
         <div class="flex gap-2 mb-3"><input id="set-prompt-input" class="input-field flex-1" placeholder="Add a new prompt…" /><button onclick="settingsAddPrompt()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg">Add</button></div>
         <div id="set-prompts-list" class="space-y-1.5 max-h-60 overflow-y-auto"></div>
       </div>
+      <!-- Integrations -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-white mb-1">Integrations</h3>
+        <p class="text-xs text-gray-500 mb-4">Connect external data sources to enrich your dashboard.</p>
+
+        <!-- GA4 -->
+        <div class="border border-gray-800 rounded-xl p-4 mb-3">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-base">📊</div>
+              <div>
+                <p class="text-sm font-semibold text-white">Google Analytics 4</p>
+                <p class="text-xs text-gray-500">AI referral traffic, landing pages, sessions</p>
+              </div>
+            </div>
+            <div id="ga4-status-badge" class="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-800 text-gray-400">Not connected</div>
+          </div>
+          <div id="ga4-setup" class="hidden">
+            <div class="bg-gray-800/60 rounded-lg p-3 mb-3 text-xs text-gray-400 space-y-1.5">
+              <p class="font-semibold text-gray-300">One-time setup (2 min):</p>
+              <p>1. Go to <a href="https://console.cloud.google.com" target="_blank" class="text-brand-400 hover:underline">console.cloud.google.com</a> → APIs → Enable <strong>Google Analytics Data API</strong></p>
+              <p>2. Create OAuth2 credentials → Web app → Add redirect URI: <code class="text-brand-300 bg-gray-900 px-1 rounded">http://localhost:3000/auth/ga4/callback</code></p>
+              <p>3. Copy Client ID + Secret below, then click Connect</p>
+            </div>
+            <div class="space-y-2 mb-3">
+              <input id="ga4-client-id" class="input-field" placeholder="Google OAuth Client ID" />
+              <input id="ga4-client-secret" class="input-field" placeholder="Google OAuth Client Secret" type="password" />
+            </div>
+            <button onclick="saveGA4Creds()" class="w-full py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold rounded-lg">Save & Connect Google Analytics</button>
+          </div>
+          <div id="ga4-connected-ui" class="hidden space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">GA4 Property</label>
+              <div class="flex gap-2">
+                <select id="ga4-property-select" class="input-field flex-1"><option value="">Select a property…</option></select>
+                <button onclick="loadGA4Properties()" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-xs text-gray-300 rounded-lg">↻</button>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="fetchGA4Data()" class="flex-1 py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold rounded-lg">Sync GA4 Data</button>
+              <button onclick="disconnectGA4()" class="px-3 py-2 bg-gray-800 hover:bg-red-900/50 text-gray-400 hover:text-red-400 text-xs rounded-lg border border-gray-700">Disconnect</button>
+            </div>
+            <p id="ga4-sync-status" class="text-xs text-gray-600"></p>
+          </div>
+          <button id="ga4-connect-btn" onclick="toggleGA4Setup()" class="w-full mt-2 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-lg border border-gray-700">Connect Google Analytics →</button>
+        </div>
+
+        <!-- Bing WMT -->
+        <div class="border border-gray-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-base">🔍</div>
+              <div>
+                <p class="text-sm font-semibold text-white">Bing Webmaster Tools</p>
+                <p class="text-xs text-gray-500">Copilot AI prompts, impressions, clicks</p>
+              </div>
+            </div>
+            <div id="bing-status-badge" class="text-xs px-2.5 py-1 rounded-full font-medium bg-gray-800 text-gray-400">Not connected</div>
+          </div>
+          <div id="bing-setup" class="hidden space-y-2 mb-3">
+            <div class="bg-gray-800/60 rounded-lg p-3 text-xs text-gray-400 space-y-1.5 mb-2">
+              <p class="font-semibold text-gray-300">Get your API key:</p>
+              <p>1. Go to <a href="https://www.bing.com/webmasters" target="_blank" class="text-brand-400 hover:underline">bing.com/webmasters</a> → Settings (⚙️) → API Access</p>
+              <p>2. Click <strong>Generate API Key</strong> and copy it below</p>
+            </div>
+            <input id="bing-api-key" class="input-field" placeholder="Bing Webmaster API Key" />
+            <button onclick="connectBing()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg">Validate & Connect</button>
+          </div>
+          <div id="bing-connected-ui" class="hidden flex gap-2">
+            <button onclick="fetchBingData()" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg">Sync Bing Data</button>
+            <button onclick="disconnectBing()" class="px-3 py-2 bg-gray-800 hover:bg-red-900/50 text-gray-400 hover:text-red-400 text-xs rounded-lg border border-gray-700">Disconnect</button>
+          </div>
+          <p id="bing-sync-status" class="text-xs text-gray-600 mt-1"></p>
+          <button id="bing-connect-btn" onclick="toggleBingSetup()" class="w-full mt-2 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-lg border border-gray-700">Connect Bing Webmaster Tools →</button>
+        </div>
+      </div>
+
       <!-- Save -->
       <button onclick="saveSettings()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg transition-colors">Save Settings</button>
       <div id="settings-saved" class="hidden text-center text-sm text-brand-400 font-medium">✓ Settings saved! Run a new poll to see updated results.</div>
@@ -1018,9 +1185,327 @@ async function triggerPoll() {
 function exportReport() { window.print(); }
 
 // ══════════════════════════════════════════════
+// GA4 INTEGRATION
+// ══════════════════════════════════════════════
+async function checkIntegrationStatus() {
+  const [ga4, bingData] = await Promise.all([
+    fetch('/api/ga4/status').then(r=>r.json()).catch(()=>({connected:false})),
+    fetch('/api/bing/data').then(r=>r.json()).catch(()=>({connected:false})),
+  ]);
+  updateGA4Badge(ga4.connected);
+  updateBingBadge(bingData.connected && bingData.hasData);
+}
+
+function updateGA4Badge(connected) {
+  ['ga4-status-badge','ga4-traffic-badge'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.textContent = connected ? '✓ Connected' : 'Not connected';
+    el.className   = connected
+      ? 'text-[10px] px-2.5 py-1 rounded-full font-medium bg-brand-500/20 text-brand-400'
+      : 'text-[10px] px-2.5 py-1 rounded-full font-medium bg-gray-800 text-gray-500';
+  });
+  const connBtn = document.getElementById('ga4-connect-btn');
+  const connUI  = document.getElementById('ga4-connected-ui');
+  const setup   = document.getElementById('ga4-setup');
+  const refresh = document.getElementById('ga4-refresh-btn');
+  if (connected) {
+    connBtn?.classList.add('hidden');
+    setup?.classList.add('hidden');
+    connUI?.classList.remove('hidden');
+    refresh?.classList.remove('hidden');
+    loadGA4Properties();
+  }
+}
+
+function updateBingBadge(connected) {
+  ['bing-status-badge','bing-traffic-badge'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.textContent = connected ? '✓ Connected' : 'Not connected';
+    el.className   = connected
+      ? 'text-[10px] px-2.5 py-1 rounded-full font-medium bg-brand-500/20 text-brand-400'
+      : 'text-[10px] px-2.5 py-1 rounded-full font-medium bg-gray-800 text-gray-500';
+  });
+  const connBtn  = document.getElementById('bing-connect-btn');
+  const connUI   = document.getElementById('bing-connected-ui');
+  const refresh  = document.getElementById('bing-refresh-btn');
+  if (connected) {
+    connBtn?.classList.add('hidden');
+    connUI?.classList.remove('hidden');
+    refresh?.classList.remove('hidden');
+  }
+}
+
+function toggleGA4Setup() {
+  const setup = document.getElementById('ga4-setup');
+  setup?.classList.toggle('hidden');
+}
+
+function toggleBingSetup() {
+  const setup = document.getElementById('bing-setup');
+  setup?.classList.toggle('hidden');
+}
+
+async function saveGA4Creds() {
+  const clientId     = document.getElementById('ga4-client-id')?.value.trim();
+  const clientSecret = document.getElementById('ga4-client-secret')?.value.trim();
+  if (!clientId || !clientSecret) { alert('Enter both Client ID and Secret'); return; }
+  // Save to server env (POST to a helper endpoint)
+  const r = await fetch('/api/ga4/set-creds', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientId, clientSecret }),
+  });
+  const d = await r.json();
+  if (!d.ok) { alert('Error: ' + d.error); return; }
+  // Open OAuth popup
+  const popup = window.open('/auth/ga4', 'ga4auth', 'width=600,height=700');
+  window.addEventListener('message', async (e) => {
+    if (e.data === 'ga4_connected') {
+      popup.close();
+      updateGA4Badge(true);
+      document.getElementById('ga4-setup')?.classList.add('hidden');
+    }
+  }, { once: true });
+}
+
+async function loadGA4Properties() {
+  const sel = document.getElementById('ga4-property-select'); if (!sel) return;
+  try {
+    const r = await fetch('/api/ga4/properties');
+    const d = await r.json();
+    if (!d.ok) return;
+    sel.innerHTML = '<option value="">Select a property…</option>' +
+      d.properties.map(p => `<option value="${p.id}">${p.displayName} (${p.id})</option>`).join('');
+    // Auto-select if only one
+    if (d.properties.length === 1) sel.value = d.properties[0].id;
+    // Load saved property from config
+    if (_config?.ga4PropertyId) sel.value = _config.ga4PropertyId;
+  } catch (e) { console.log('GA4 properties error:', e.message); }
+}
+
+async function fetchGA4Data() {
+  const sel = document.getElementById('ga4-property-select');
+  const propertyId = sel?.value || _config?.ga4PropertyId;
+  if (!propertyId) { alert('Select a GA4 property first'); return; }
+
+  // Save property to config
+  if (_config) {
+    _config.ga4PropertyId = propertyId;
+    await fetch('/api/setup', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(_config) });
+  }
+
+  const statusEl = document.getElementById('ga4-sync-status');
+  if (statusEl) statusEl.textContent = 'Syncing GA4 data…';
+
+  try {
+    const r = await fetch('/api/ga4/fetch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ propertyId, days: 30 }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error);
+    if (statusEl) statusEl.textContent = `✓ Synced at ${new Date().toLocaleTimeString()}`;
+    renderGA4Data(d.data);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '✗ Error: ' + e.message;
+  }
+}
+
+async function disconnectGA4() {
+  if (!confirm('Disconnect Google Analytics?')) return;
+  await fetch('/auth/ga4', { method: 'DELETE' });
+  updateGA4Badge(false);
+  document.getElementById('ga4-connect-btn')?.classList.remove('hidden');
+  document.getElementById('ga4-connected-ui')?.classList.add('hidden');
+  document.getElementById('ga4-refresh-btn')?.classList.add('hidden');
+}
+
+function renderGA4Data(data) {
+  if (!data) return;
+
+  // Stat cards
+  const cards = document.getElementById('ga4-stat-cards');
+  if (cards) {
+    const topSource = data.sources?.[0]?.source || '—';
+    cards.innerHTML = [
+      { label:'AI Sessions',    val: data.totalSessions?.toLocaleString() || '0' },
+      { label:'AI Users',       val: data.totalUsers?.toLocaleString()    || '0' },
+      { label:'Conversions',    val: data.totalConversions?.toLocaleString() || '0' },
+      { label:'Top AI Source',  val: topSource },
+    ].map(s=>`<div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">${s.label}</p><p class="text-xl font-bold text-white mt-1 truncate">${s.val}</p></div>`).join('');
+  }
+
+  // Sessions by source list
+  const srcList = document.getElementById('ga4-sources-list');
+  if (srcList && data.sources?.length) {
+    const max = data.sources[0].sessions || 1;
+    srcList.innerHTML = data.sources.slice(0, 8).map(s => {
+      const pct = Math.round((s.sessions / max) * 100);
+      return `<div><div class="flex justify-between text-xs mb-1"><span class="text-gray-300 truncate">${s.source}</span><span class="text-white font-semibold ml-2">${s.sessions}</span></div><div class="h-1.5 bg-gray-800 rounded-full overflow-hidden"><div class="h-full bg-brand-500 rounded-full" style="width:${pct}%"></div></div></div>`;
+    }).join('');
+  }
+
+  // Sessions over time chart
+  if (data.daily?.length) {
+    const labels = data.daily.map(d => { const dt=new Date(d.date.replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3')); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'}); });
+    const vals   = data.daily.map(d => d.sessions);
+    const ctx    = document.getElementById('ga4-sessions-chart')?.getContext('2d');
+    if (ctx) mkChart('ga4-sessions-chart',{type:'line',data:{labels,datasets:[{data:vals,borderColor:'#f97316',borderWidth:2,backgroundColor:'rgba(249,115,22,.2)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#f97316',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:6}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}}}});
+  }
+
+  // Landing pages table
+  const pagesTb = document.getElementById('ga4-pages-table');
+  if (pagesTb) {
+    const pages = {};
+    data.sources?.forEach(s => s.topPages?.forEach(p => {
+      if (!pages[p.page]) pages[p.page] = { page: p.page, sessions: 0, source: s.source };
+      pages[p.page].sessions += p.sessions;
+    }));
+    const sorted = Object.values(pages).sort((a,b)=>b.sessions-a.sessions).slice(0,10);
+    if (sorted.length) {
+      pagesTb.innerHTML = sorted.map(p=>`<tr class="hover:bg-gray-800/40 border-b border-gray-800"><td class="px-5 py-3 text-brand-400 truncate max-w-xs">${p.page}</td><td class="px-5 py-3 font-semibold text-white">${p.sessions}</td><td class="px-5 py-3 text-gray-400">${p.source}</td></tr>`).join('');
+    }
+  }
+}
+
+// ══════════════════════════════════════════════
+// BING INTEGRATION
+// ══════════════════════════════════════════════
+async function connectBing() {
+  const apiKey = document.getElementById('bing-api-key')?.value.trim();
+  if (!apiKey) { alert('Enter your Bing Webmaster API key'); return; }
+  const statusEl = document.getElementById('bing-sync-status');
+  if (statusEl) statusEl.textContent = 'Validating…';
+  try {
+    const r = await fetch('/api/bing/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey, siteUrl: _config?.brand?.domain || '' }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error);
+    if (statusEl) statusEl.textContent = `✓ Connected — ${d.sites?.length || 0} site(s) found`;
+    updateBingBadge(true);
+    document.getElementById('bing-setup')?.classList.add('hidden');
+    document.getElementById('bing-connect-btn')?.classList.add('hidden');
+    // Auto-fetch
+    fetchBingData();
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '✗ ' + e.message;
+  }
+}
+
+async function fetchBingData() {
+  const statusEl = document.getElementById('bing-sync-status');
+  if (statusEl) statusEl.textContent = 'Syncing Bing data…';
+  try {
+    const r = await fetch('/api/bing/fetch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days: 30 }),
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error);
+    if (statusEl) statusEl.textContent = `✓ Synced at ${new Date().toLocaleTimeString()}`;
+    renderBingData(d.data);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '✗ ' + e.message;
+  }
+}
+
+async function disconnectBing() {
+  if (!confirm('Disconnect Bing Webmaster Tools?')) return;
+  await fetch('/api/bing', { method: 'DELETE' });
+  updateBingBadge(false);
+  document.getElementById('bing-connect-btn')?.classList.remove('hidden');
+  document.getElementById('bing-connected-ui')?.classList.add('hidden');
+  document.getElementById('bing-refresh-btn')?.classList.add('hidden');
+}
+
+function renderBingData(data) {
+  if (!data) return;
+
+  // AI Prompts table
+  const pt = document.getElementById('bing-prompts-table');
+  const pc = document.getElementById('bing-prompt-count');
+  if (pt && data.aiPrompts?.length) {
+    if (pc) pc.textContent = data.aiPrompts.length + ' prompts';
+    pt.innerHTML = data.aiPrompts.slice(0, 25).map(q => {
+      const posColor = q.avgPosition <= 3 ? 'text-brand-400' : q.avgPosition <= 10 ? 'text-yellow-400' : 'text-gray-400';
+      return `<tr class="hover:bg-gray-800/40 border-b border-gray-800">
+        <td class="px-5 py-3 text-gray-300 max-w-xs"><span class="truncate block" title="${q.query}">${q.query}</span></td>
+        <td class="px-5 py-3 text-right text-white font-semibold">${q.impressions.toLocaleString()}</td>
+        <td class="px-5 py-3 text-right text-gray-400">${q.clicks.toLocaleString()}</td>
+        <td class="px-5 py-3 text-right font-semibold ${posColor}">${q.avgPosition?.toFixed(1) || '—'}</td>
+      </tr>`;
+    }).join('');
+  } else if (pt) {
+    pt.innerHTML = '<tr><td colspan="4" class="px-5 py-6 text-center text-gray-600">No AI prompts data yet — Bing may need time to populate this report.</td></tr>';
+  }
+
+  // Pages table
+  const pgt = document.getElementById('bing-pages-table');
+  if (pgt && data.pageStats?.length) {
+    pgt.innerHTML = data.pageStats.slice(0, 15).map(p => `<tr class="hover:bg-gray-800/40 border-b border-gray-800">
+      <td class="px-5 py-3 text-brand-400 truncate max-w-xs" title="${p.url}">${p.url.replace(/^https?:\/\//,'').slice(0,50)}</td>
+      <td class="px-5 py-3 text-right text-white font-semibold">${p.impressions.toLocaleString()}</td>
+      <td class="px-5 py-3 text-right text-gray-400">${p.clicks.toLocaleString()}</td>
+    </tr>`).join('');
+  }
+}
+
+// Load existing integration data when visiting traffic page
+async function traffic() {
+  // Mention signals (always available)
+  const s=_stats;
+  const menC=s.mentionsOverTime?.map(d=>d.count)||[0];
+  const tl=timeLabels();
+  const ts=document.getElementById('traffic-stats');
+  ts.innerHTML=[
+    {label:'Total AI Signals',val:s.totalMentions,sub:'Mention events tracked'},
+    {label:'Avg. Signals/Day',val:tl.length?(s.totalMentions/tl.length).toFixed(1):'—',sub:'Daily mention average'},
+    {label:'Peak Day Signals',val:Math.max(...menC,0),sub:'Highest single-day count'},
+    {label:'Active Platforms',val:s.engineCoverage?.filter(e=>e.runs>0).length||0,sub:'Platforms with signals'},
+  ].map(st=>`<div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">${st.label}</p><p class="text-2xl font-bold text-white mt-1">${st.val}</p><p class="text-xs text-gray-500 mt-1">${st.sub}</p></div>`).join('');
+
+  const tlCtx=document.getElementById('traffic-line')?.getContext('2d');
+  if(tlCtx) mkChart('traffic-line',{type:'line',data:{labels:tl,datasets:[{label:'AI Signals',data:menC,borderColor:'#22c55e',borderWidth:2,backgroundColor:lineGrad(tlCtx,'rgba(34,197,94,.3)','rgba(34,197,94,0)'),fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#22c55e',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:6}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}}}});
+
+  const platMentions=PLATFORMS.map(p=>(_results||[]).reduce((s,r)=>s+(r.platformResults?.[p]?.mentioned?1:0),0));
+  const tpCtx=document.getElementById('traffic-platform-bar')?.getContext('2d');
+  if(tpCtx) mkChart('traffic-platform-bar',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:'Mention Signals',data:platMentions,backgroundColor:barGrad(tpCtx,'rgba(34,197,94,.9)','rgba(34,197,94,.4)'),borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}}}});
+
+  // Load GA4 + Bing if connected
+  const [ga4Status, bingStatus] = await Promise.all([
+    fetch('/api/ga4/status').then(r=>r.json()).catch(()=>({connected:false})),
+    fetch('/api/bing/data').then(r=>r.json()).catch(()=>({connected:false,hasData:false})),
+  ]);
+
+  updateGA4Badge(ga4Status.connected);
+  updateBingBadge(bingStatus.connected && bingStatus.hasData);
+
+  if (!ga4Status.connected && !bingStatus.connected) {
+    document.getElementById('traffic-connect-bar')?.classList.remove('hidden');
+  }
+
+  // Load cached GA4 data
+  if (ga4Status.connected) {
+    const ga4Data = await fetch('/api/ga4/data').then(r=>r.json()).catch(()=>null);
+    if (ga4Data?.sources) renderGA4Data(ga4Data);
+  }
+
+  // Load cached Bing data
+  if (bingStatus.hasData) renderBingData(bingStatus);
+}
+
+// ══════════════════════════════════════════════
 // BOOT
 // ══════════════════════════════════════════════
-loadData().then(()=>{ if(_stats?.ready) overview(); });
+loadData().then(async ()=>{
+  if(_stats?.ready) overview();
+  await checkIntegrationStatus();
+});
 </script>
 </body>
 </html>

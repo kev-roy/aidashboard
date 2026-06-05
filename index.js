@@ -4,6 +4,11 @@ const path     = require('path');
 const fs       = require('fs');
 const cron     = require('node-cron');
 const { runPoll } = require('./poller');
+const {
+  getGA4AuthURL, handleGA4Callback, loadGA4Tokens,
+  fetchGA4AITraffic, listGA4Properties,
+  fetchBingAIPrompts, validateBingKey,
+} = require('./integrations');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -205,6 +210,135 @@ function buildStats(results, config) {
     },
   };
 }
+
+// ── GA4 OAuth ────────────────────────────────────────────────────────────────
+
+const GA4_DATA_FILE  = path.join(DATA_DIR, 'ga4_data.json');
+const BING_DATA_FILE = path.join(DATA_DIR, 'bing_data.json');
+
+// Save GA4 OAuth creds to .env and reload
+app.post('/api/ga4/set-creds', (req, res) => {
+  const { clientId, clientSecret } = req.body;
+  if (!clientId || !clientSecret) return res.status(400).json({ ok: false, error: 'Missing credentials' });
+  const envPath = require('path').join(__dirname, '.env');
+  let env = require('fs').existsSync(envPath) ? require('fs').readFileSync(envPath, 'utf8') : '';
+  const set = (key, val) => {
+    const re = new RegExp(`^${key}=.*$`, 'm');
+    return re.test(env) ? env.replace(re, `${key}="${val}"`) : env + `\n${key}="${val}"`;
+  };
+  env = set('GA4_CLIENT_ID', clientId);
+  env = set('GA4_CLIENT_SECRET', clientSecret);
+  require('fs').writeFileSync(envPath, env);
+  process.env.GA4_CLIENT_ID     = clientId;
+  process.env.GA4_CLIENT_SECRET = clientSecret;
+  res.json({ ok: true });
+});
+
+app.get('/auth/ga4', (req, res) => {
+  if (!process.env.GA4_CLIENT_ID) {
+    return res.status(400).send('GA4_CLIENT_ID not set in .env — see Settings for setup instructions.');
+  }
+  res.redirect(getGA4AuthURL());
+});
+
+app.get('/auth/ga4/callback', async (req, res) => {
+  try {
+    await handleGA4Callback(req.query.code);
+    res.send('<script>window.opener.postMessage("ga4_connected","*");window.close();</script>');
+  } catch (e) {
+    res.status(500).send('OAuth error: ' + e.message);
+  }
+});
+
+app.get('/api/ga4/status', (req, res) => {
+  const tokens = loadGA4Tokens();
+  res.json({ connected: !!tokens, hasClientId: !!process.env.GA4_CLIENT_ID });
+});
+
+app.get('/api/ga4/properties', async (req, res) => {
+  try {
+    const props = await listGA4Properties();
+    res.json({ ok: true, properties: props });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/api/ga4/fetch', async (req, res) => {
+  const { propertyId, days = 30 } = req.body;
+  if (!propertyId) return res.status(400).json({ ok: false, error: 'propertyId required' });
+  try {
+    const data = await fetchGA4AITraffic(propertyId, days);
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(GA4_DATA_FILE, JSON.stringify({ propertyId, ...data }, null, 2));
+    res.json({ ok: true, data });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/ga4/data', (req, res) => {
+  if (!fs.existsSync(GA4_DATA_FILE)) return res.json({ connected: false });
+  res.json({ connected: true, ...JSON.parse(fs.readFileSync(GA4_DATA_FILE, 'utf8')) });
+});
+
+app.delete('/auth/ga4', (req, res) => {
+  const TOKEN = path.join(DATA_DIR, 'ga4_token.json');
+  if (fs.existsSync(TOKEN)) fs.unlinkSync(TOKEN);
+  if (fs.existsSync(GA4_DATA_FILE)) fs.unlinkSync(GA4_DATA_FILE);
+  res.json({ ok: true });
+});
+
+// ── Bing Webmaster Tools ──────────────────────────────────────────────────────
+
+app.post('/api/bing/validate', async (req, res) => {
+  const { apiKey, siteUrl } = req.body;
+  if (!apiKey || !siteUrl) return res.status(400).json({ ok: false, error: 'apiKey and siteUrl required' });
+  try {
+    const result = await validateBingKey(apiKey, siteUrl);
+    // Save key to config
+    if (fs.existsSync(CONFIG_FILE)) {
+      const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+      config.bingApiKey = apiKey;
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+    }
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/api/bing/fetch', async (req, res) => {
+  const { days = 30 } = req.body;
+  const config = fs.existsSync(CONFIG_FILE) ? JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')) : {};
+  const apiKey  = config.bingApiKey;
+  const siteUrl = config.brand?.domain ? `https://${config.brand.domain}` : null;
+  if (!apiKey || !siteUrl) return res.status(400).json({ ok: false, error: 'Bing API key not configured' });
+  try {
+    const data = await fetchBingAIPrompts(apiKey, siteUrl, days);
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(BING_DATA_FILE, JSON.stringify(data, null, 2));
+    res.json({ ok: true, data });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/api/bing/data', (req, res) => {
+  const config = fs.existsSync(CONFIG_FILE) ? JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')) : {};
+  if (!fs.existsSync(BING_DATA_FILE)) return res.json({ connected: !!config.bingApiKey, hasData: false });
+  res.json({ connected: true, hasData: true, ...JSON.parse(fs.readFileSync(BING_DATA_FILE, 'utf8')) });
+});
+
+app.delete('/api/bing', (req, res) => {
+  if (fs.existsSync(BING_DATA_FILE)) fs.unlinkSync(BING_DATA_FILE);
+  if (fs.existsSync(CONFIG_FILE)) {
+    const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    delete config.bingApiKey;
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+  }
+  res.json({ ok: true });
+});
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 
