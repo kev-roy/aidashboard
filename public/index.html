@@ -1,706 +1,1024 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Visibility Tracker — GreenBananaSEO</title>
+  <title>AI Visibility Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50:  '#f0fdf4',
-              100: '#dcfce7',
-              200: '#bbf7d0',
-              300: '#86efac',
-              400: '#4ade80',
-              500: '#22c55e',
-              600: '#16a34a',
-              700: '#15803d',
-              800: '#166534',
-              900: '#14532d',
-            }
-          }
-        }
-      }
+      theme: { extend: { colors: { brand: { 400:'#4ade80',500:'#22c55e',600:'#16a34a' } } } }
     }
   </script>
   <style>
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
-    .dark ::-webkit-scrollbar-thumb { background: #374151; }
-    .light-mode ::-webkit-scrollbar-thumb { background: #d1d5db; }
-
-    /* Sidebar active */
-    .nav-item.active { background: rgba(34,197,94,0.15); color: #22c55e; }
-    .nav-item.active svg { color: #22c55e; }
-    .nav-item { transition: all 0.15s; }
-
-    /* Spark line canvas */
-    .sparkline { display: inline-block; }
-
-    /* Theme toggle */
-    .theme-toggle { cursor: pointer; }
-
-    /* Smooth transitions */
-    * { transition: background-color 0.2s, border-color 0.2s, color 0.1s; }
-    canvas { transition: none !important; }
+    ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#374151;border-radius:3px}
+    .nav-item{transition:all .15s;cursor:pointer}
+    .nav-item.active{background:rgba(34,197,94,.15);color:#22c55e}
+    .page{display:none}.page.active{display:block}
+    .input-field{width:100%;background:#1f2937;border:1px solid #374151;border-radius:.5rem;padding:.6rem .875rem;color:#f9fafb;font-size:.875rem}
+    .input-field:focus{outline:none;border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15)}
+    .input-field::placeholder{color:#6b7280}
+    .badge-high{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
+    .badge-med{background:rgba(234,179,8,.15);color:#fbbf24;border:1px solid rgba(234,179,8,.3)}
+    .badge-low{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3)}
+    .badge-none{background:rgba(107,114,128,.15);color:#9ca3af;border:1px solid rgba(107,114,128,.3)}
+    canvas{transition:none!important}
   </style>
 </head>
-<body class="dark bg-gray-950 text-gray-100 min-h-screen flex">
+<body class="bg-gray-950 text-gray-100 min-h-screen flex">
 
-  <!-- ═══════════════════════════════════════════ SIDEBAR ═══ -->
-  <aside class="w-56 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col h-screen sticky top-0">
+<!-- ══════════════════════════════ SIDEBAR ══════════════════════════════ -->
+<aside class="w-56 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col h-screen sticky top-0">
+  <div class="px-5 py-5 border-b border-gray-800">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-md bg-brand-500 flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+      </div>
+      <div><div class="text-sm font-bold text-white leading-tight">AI Visibility</div><div class="text-[10px] text-brand-400 font-medium tracking-wide">TRACKER</div></div>
+    </div>
+  </div>
+  <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+    <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-2 mb-2">Main</p>
+    <div class="nav-item active flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium" onclick="navigate('overview')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Overview
+    </div>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('citations')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>AI Citations
+    </div>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('mentions')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>Brand Mentions
+    </div>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('urls')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>Cited URLs
+    </div>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('competitors')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>Competitors
+    </div>
+    <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-2 mt-4 mb-2">Analytics</p>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('traffic')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>Referral Traffic
+    </div>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('engines')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707"/></svg>AI Engines
+    </div>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('opportunities')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>Opportunities
+      <span class="ml-auto text-[10px] bg-brand-500/20 text-brand-400 px-1.5 py-0.5 rounded font-semibold">NEW</span>
+    </div>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('content')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>Content
+    </div>
+    <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-2 mt-4 mb-2">System</p>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('alerts')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>Alerts
+      <span id="alert-badge" class="ml-auto hidden w-2 h-2 rounded-full bg-red-500"></span>
+    </div>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('reports')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>Reports
+    </div>
+    <div class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800" onclick="navigate('settings')">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><circle cx="12" cy="12" r="3"/></svg>Settings
+    </div>
+  </nav>
+  <div class="px-3 pb-4">
+    <div class="bg-brand-500/10 border border-brand-500/20 rounded-lg p-3">
+      <p class="text-[10px] font-semibold text-brand-400">Pro Tip</p>
+      <p class="text-[10px] text-gray-400 mt-0.5 leading-relaxed" id="sidebar-tip">Add more prompts in Settings to get richer data across all AI engines.</p>
+    </div>
+  </div>
+</aside>
 
-    <!-- Logo -->
-    <div class="px-5 py-5 border-b border-gray-800">
+<!-- ══════════════════════════════ MAIN ══════════════════════════════ -->
+<main class="flex-1 flex flex-col min-h-screen overflow-auto">
+
+  <!-- Top bar -->
+  <header class="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-8 py-3 flex items-center justify-between">
+    <div>
       <div class="flex items-center gap-2">
-        <div class="w-7 h-7 rounded-md bg-brand-500 flex items-center justify-center">
-          <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
-          </svg>
+        <svg class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
+        <h1 class="text-xl font-bold text-white" id="page-title">AI Citation Tracking Dashboard</h1>
+      </div>
+      <p class="text-sm text-gray-400 mt-0.5 ml-7" id="page-subtitle">Monitor how your brand is cited across AI engines and track visibility over time.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-xs text-gray-600" id="last-updated"></span>
+      <button id="run-poll-btn" onclick="triggerPoll()" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm font-semibold text-brand-400 border border-brand-500/40">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+        Run Poll
+      </button>
+      <button onclick="exportReport()" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-sm font-semibold text-white">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+        Export
+      </button>
+    </div>
+  </header>
+
+  <!-- ════════════ PAGE: OVERVIEW ════════════ -->
+  <div id="page-overview" class="page active p-8 space-y-6">
+    <div class="grid grid-cols-5 gap-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400 font-medium">AI Citations</p><p class="text-2xl font-bold text-white mt-1" id="stat-citations">—</p><canvas id="spark1" width="80" height="30" class="mt-2"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400 font-medium">Brand Mentions</p><p class="text-2xl font-bold text-white mt-1" id="stat-mentions">—</p><canvas id="spark2" width="80" height="30" class="mt-2"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400 font-medium">Prompts Tracked</p><p class="text-2xl font-bold text-white mt-1" id="stat-prompts">—</p><canvas id="spark3" width="80" height="30" class="mt-2"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400 font-medium">Platforms Active</p><p class="text-2xl font-bold text-white mt-1" id="stat-platforms">—</p><canvas id="spark4" width="80" height="30" class="mt-2"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400 font-medium">Avg. AI Position</p><p class="text-2xl font-bold text-white mt-1" id="stat-avg-pos">—</p><canvas id="spark5" width="80" height="30" class="mt-2"></canvas></div>
+    </div>
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">AI Citations Over Time</h3></div><canvas id="citationsChart" height="150"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">Brand Mentions Over Time</h3></div><canvas id="mentionsChart" height="150"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">Cited URLs</h3><a onclick="navigate('urls')" class="text-xs text-brand-400 hover:text-brand-300 cursor-pointer">View all →</a></div><div id="ov-cited-urls"></div></div>
+    </div>
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-white mb-4">Competitor Share</h3>
+        <div class="flex items-center gap-4">
+          <div class="relative w-28 h-28 flex-shrink-0"><canvas id="donutChart"></canvas><div class="absolute inset-0 flex flex-col items-center justify-center"><span class="text-lg font-bold text-white" id="brand-share-pct">—</span><span class="text-[9px] text-gray-400">Your Brand</span></div></div>
+          <div class="space-y-1.5 flex-1 text-xs" id="donut-legend"></div>
         </div>
-        <div>
-          <div class="text-sm font-bold text-white leading-tight">AI Visibility</div>
-          <div class="text-[10px] text-brand-400 font-medium tracking-wide">TRACKER</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">AI Referral Signals</h3></div><canvas id="trafficChart" height="150"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-white mb-4">AI Engine Coverage</h3>
+        <div class="grid grid-cols-4 gap-2 mb-3" id="engine-grid"></div>
+        <div class="flex items-center gap-3 text-[10px] text-gray-500 pt-2 border-t border-gray-800">
+          <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>High 80%+</span>
+          <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>Med 50–79%</span>
+          <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>Low &lt;50%</span>
         </div>
       </div>
     </div>
-
-    <!-- Nav -->
-    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-2 mb-2">Main</p>
-
-      <a href="#" class="nav-item active flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Overview
-      </a>
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>
-        AI Citations
-      </a>
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
-        Brand Mentions
-      </a>
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/></svg>
-        Cited URLs
-      </a>
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
-        Competitors
-      </a>
-
-      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-2 mt-4 mb-2">Analytics</p>
-
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
-        Referral Traffic
-      </a>
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707"/></svg>
-        AI Engines
-      </a>
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><circle cx="12" cy="12" r="3"/></svg>
-        Opportunities
-        <span class="ml-auto text-[10px] bg-brand-500/20 text-brand-400 px-1.5 py-0.5 rounded font-semibold">NEW</span>
-      </a>
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-        Content
-      </a>
-
-      <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-widest px-2 mt-4 mb-2">System</p>
-
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
-        Alerts
-        <span class="ml-auto w-2 h-2 rounded-full bg-red-500"></span>
-      </a>
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
-        Reports
-      </a>
-      <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><circle cx="12" cy="12" r="3"/></svg>
-        Settings
-      </a>
-    </nav>
-
-    <!-- Tip -->
-    <div class="px-3 pb-4">
-      <div class="bg-brand-500/10 border border-brand-500/20 rounded-lg p-3">
-        <div class="flex items-start gap-2">
-          <svg class="w-4 h-4 text-brand-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/></svg>
-          <div>
-            <p class="text-[11px] font-semibold text-brand-400">Pro Tip</p>
-            <p class="text-[10px] text-gray-400 mt-0.5 leading-relaxed">Track consistent growth in AI citations to improve your brand's visibility in AI-powered answers.</p>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">Brand Sentiment</h3><span class="text-[10px] bg-brand-500/20 text-brand-400 px-2 py-0.5 rounded-full font-medium">Live</span></div>
+        <div class="flex items-center gap-6">
+          <div class="flex-1 space-y-3">
+            <div><div class="flex justify-between text-xs mb-1"><span class="text-gray-300">Positive</span><span class="text-brand-400 font-semibold" id="sent-pos-pct">—</span></div><div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div id="sent-pos-bar" class="h-full bg-brand-500 rounded-full" style="width:0%"></div></div></div>
+            <div><div class="flex justify-between text-xs mb-1"><span class="text-gray-300">Neutral</span><span class="text-gray-400 font-semibold" id="sent-neu-pct">—</span></div><div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div id="sent-neu-bar" class="h-full bg-gray-500 rounded-full" style="width:0%"></div></div></div>
+            <div><div class="flex justify-between text-xs mb-1"><span class="text-gray-300">Negative</span><span class="text-red-400 font-semibold" id="sent-neg-pct">—</span></div><div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div id="sent-neg-bar" class="h-full bg-red-500 rounded-full" style="width:0%"></div></div></div>
           </div>
+          <div class="text-center"><div class="text-4xl font-bold text-brand-400" id="sent-score">—</div><div class="text-xs text-gray-400 mt-1">Sentiment<br>Score</div></div>
         </div>
       </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">Top Performing Prompts</h3><a onclick="navigate('opportunities')" class="text-xs text-brand-400 hover:text-brand-300 cursor-pointer">Manage →</a></div>
+        <div id="prompts-list" class="space-y-2.5"></div>
+      </div>
     </div>
-  </aside>
+  </div>
 
-  <!-- ═══════════════════════════════════════════ MAIN ═══ -->
-  <main class="flex-1 flex flex-col min-h-screen overflow-auto">
+  <!-- ════════════ PAGE: AI CITATIONS ════════════ -->
+  <div id="page-citations" class="page p-8">
+    <div class="grid grid-cols-4 gap-4 mb-6" id="cit-stats"></div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-white">All Citation Events</h3>
+        <span class="text-xs text-gray-500" id="cit-count"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="border-b border-gray-800 text-gray-500 uppercase tracking-wider text-[10px]">
+            <th class="px-5 py-3 text-left">Date</th>
+            <th class="px-5 py-3 text-left">Prompt</th>
+            <th class="px-5 py-3 text-left">Platform</th>
+            <th class="px-5 py-3 text-left">Mentioned</th>
+            <th class="px-5 py-3 text-left">Position</th>
+            <th class="px-5 py-3 text-left">Sentiment</th>
+            <th class="px-5 py-3 text-left">Cited URLs</th>
+          </tr></thead>
+          <tbody id="cit-table" class="divide-y divide-gray-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-    <!-- Top Bar -->
-    <header class="sticky top-0 z-10 bg-gray-950/80 backdrop-blur border-b border-gray-800 px-8 py-3 flex items-center justify-between">
+  <!-- ════════════ PAGE: BRAND MENTIONS ════════════ -->
+  <div id="page-mentions" class="page p-8">
+    <div class="grid grid-cols-4 gap-4 mb-6" id="men-stats"></div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Mentions by Platform</h3><canvas id="men-platform-chart" height="180"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Mention Rate by Prompt</h3><div id="men-prompt-rates" class="space-y-2.5"></div></div>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-800"><h3 class="text-sm font-semibold text-white">Mention Log</h3></div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="border-b border-gray-800 text-gray-500 uppercase tracking-wider text-[10px]">
+            <th class="px-5 py-3 text-left">Date</th><th class="px-5 py-3 text-left">Prompt</th><th class="px-5 py-3 text-left">Platform</th><th class="px-5 py-3 text-left">Position</th><th class="px-5 py-3 text-left">Sentiment</th><th class="px-5 py-3 text-left">Mention Rate</th><th class="px-5 py-3 text-left">Response Snippet</th>
+          </tr></thead>
+          <tbody id="men-table" class="divide-y divide-gray-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ PAGE: CITED URLS ════════════ -->
+  <div id="page-urls" class="page p-8">
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 col-span-2"><h3 class="text-sm font-semibold text-white mb-4">Top Cited Pages</h3><canvas id="url-bar-chart" height="200"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Citations by Platform</h3><canvas id="url-donut-chart" height="200"></canvas></div>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-white">All Cited URLs</h3>
+        <span class="text-xs text-gray-500" id="url-count"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="border-b border-gray-800 text-gray-500 uppercase tracking-wider text-[10px]">
+            <th class="px-5 py-3 text-left">URL</th><th class="px-5 py-3 text-left">Total Citations</th><th class="px-5 py-3 text-left">ChatGPT</th><th class="px-5 py-3 text-left">Claude</th><th class="px-5 py-3 text-left">Perplexity</th><th class="px-5 py-3 text-left">Google AIO</th>
+          </tr></thead>
+          <tbody id="url-table" class="divide-y divide-gray-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ PAGE: COMPETITORS ════════════ -->
+  <div id="page-competitors" class="page p-8">
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-white mb-4">Share of Voice</h3>
+        <div class="flex items-center gap-6">
+          <div class="relative w-36 h-36 flex-shrink-0"><canvas id="comp-donut"></canvas><div class="absolute inset-0 flex flex-col items-center justify-center"><span class="text-xl font-bold text-white" id="comp-brand-pct">—</span><span class="text-[9px] text-gray-400">Your Brand</span></div></div>
+          <div class="space-y-2 flex-1 text-xs" id="comp-legend"></div>
+        </div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Head-to-Head by Platform</h3><canvas id="comp-bar-chart" height="180"></canvas></div>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+      <h3 class="text-sm font-semibold text-white mb-4">Competitor Mention Breakdown</h3>
+      <div id="comp-breakdown" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ════════════ PAGE: REFERRAL TRAFFIC ════════════ -->
+  <div id="page-traffic" class="page p-8">
+    <div class="bg-brand-500/10 border border-brand-500/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+      <svg class="w-5 h-5 text-brand-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+      <div><p class="text-sm font-semibold text-brand-300">GA4 Integration Coming Soon</p><p class="text-xs text-gray-400 mt-1">Connect Google Analytics 4 in Settings to see real referral traffic from AI platforms. Currently showing AI mention signals as a proxy.</p></div>
+    </div>
+    <div class="grid grid-cols-4 gap-4 mb-6" id="traffic-stats"></div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">AI Mention Signals Over Time</h3><canvas id="traffic-line" height="200"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Signal Volume by Platform</h3><canvas id="traffic-platform-bar" height="200"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ════════════ PAGE: AI ENGINES ════════════ -->
+  <div id="page-engines" class="page p-8">
+    <div class="grid grid-cols-4 gap-4 mb-6" id="eng-cards"></div>
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Coverage Rate by Engine</h3><canvas id="eng-coverage-chart" height="200"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Avg. Position by Engine</h3><canvas id="eng-position-chart" height="200"></canvas></div>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+      <h3 class="text-sm font-semibold text-white mb-4">Per-Engine Prompt Performance</h3>
+      <div id="eng-prompt-table"></div>
+    </div>
+  </div>
+
+  <!-- ════════════ PAGE: OPPORTUNITIES ════════════ -->
+  <div id="page-opportunities" class="page p-8">
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-white">Visibility Gaps</h3>
+          <span class="text-xs text-gray-500">Prompts where you're not appearing</span>
+        </div>
+        <div id="opp-gaps" class="space-y-2"></div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-white">Underperforming Prompts</h3>
+          <span class="text-xs text-gray-500">Below 50% mention rate</span>
+        </div>
+        <div id="opp-underperform" class="space-y-2"></div>
+      </div>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-white">Suggested Prompts to Add</h3>
+        <button onclick="addAllSuggested()" class="text-xs text-brand-400 hover:text-brand-300 font-medium">Add all to tracking →</button>
+      </div>
+      <div id="opp-suggested" class="grid grid-cols-2 gap-2"></div>
+    </div>
+  </div>
+
+  <!-- ════════════ PAGE: CONTENT ════════════ -->
+  <div id="page-content" class="page p-8">
+    <div class="grid grid-cols-3 gap-4 mb-6" id="content-stats"></div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-white">Your Cited Pages Inventory</h3>
+        <span class="text-xs text-gray-500" id="content-count"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="border-b border-gray-800 text-gray-500 uppercase tracking-wider text-[10px]">
+            <th class="px-5 py-3 text-left">Page URL</th><th class="px-5 py-3 text-left">Total Citations</th><th class="px-5 py-3 text-left">Platforms</th><th class="px-5 py-3 text-left">First Cited</th><th class="px-5 py-3 text-left">Last Cited</th><th class="px-5 py-3 text-left">Status</th>
+          </tr></thead>
+          <tbody id="content-table" class="divide-y divide-gray-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ PAGE: ALERTS ════════════ -->
+  <div id="page-alerts" class="page p-8">
+    <div class="grid grid-cols-2 gap-6">
       <div>
-        <div class="flex items-center gap-2">
-          <svg class="w-5 h-5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
-          <h1 class="text-xl font-bold text-white">AI Citation Tracking Dashboard</h1>
+        <h3 class="text-sm font-semibold text-white mb-4">Alert Rules</h3>
+        <div class="space-y-3" id="alert-rules">
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+            <div><p class="text-sm font-medium text-white">Brand mention drops below 30%</p><p class="text-xs text-gray-500 mt-0.5">Triggers when mention rate on any platform falls sharply</p></div>
+            <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" checked class="sr-only peer"><div class="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div></label>
+          </div>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+            <div><p class="text-sm font-medium text-white">Competitor surges past your share</p><p class="text-xs text-gray-500 mt-0.5">Triggers when a competitor's mention count exceeds yours</p></div>
+            <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" checked class="sr-only peer"><div class="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div></label>
+          </div>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+            <div><p class="text-sm font-medium text-white">New citation detected</p><p class="text-xs text-gray-500 mt-0.5">Triggers when a new URL from your domain is cited</p></div>
+            <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" class="sr-only peer"><div class="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div></label>
+          </div>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+            <div><p class="text-sm font-medium text-white">Negative sentiment detected</p><p class="text-xs text-gray-500 mt-0.5">Triggers when sentiment score drops below 40</p></div>
+            <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" checked class="sr-only peer"><div class="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div></label>
+          </div>
         </div>
-        <p class="text-sm text-gray-400 mt-0.5 ml-7">Monitor how your brand is cited across AI engines and track visibility over time.</p>
       </div>
-      <div class="flex items-center gap-3">
-        <!-- Theme toggle -->
-        <button onclick="toggleTheme()" class="theme-toggle flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 border border-gray-700">
-          <svg id="theme-icon-dark" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg>
-          <svg id="theme-icon-light" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
-        </button>
-        <!-- Date range -->
-        <button class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 border border-gray-700">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
-          May 17 – Jun 16, 2025
-          <svg class="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
-        </button>
-        <!-- Run Poll -->
-        <button id="run-poll-btn" onclick="triggerPoll()" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm font-semibold text-brand-400 border border-brand-500/40">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-          Run Poll Now
-        </button>
-        <!-- Export -->
-        <button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-sm font-semibold text-white">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-          Export
-        </button>
+      <div>
+        <h3 class="text-sm font-semibold text-white mb-4">Alert History</h3>
+        <div id="alert-history" class="space-y-2">
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 text-xs text-gray-500 text-center py-8">No alerts triggered yet. Keep polling daily to build history.</div>
+        </div>
       </div>
-    </header>
-
-    <!-- No data banner -->
-    <div id="no-data-banner" class="hidden mx-8 mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl flex items-center gap-3">
-      <svg class="w-5 h-5 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-      <p class="text-sm text-yellow-300">No poll data yet. Click <strong>Run Poll Now</strong> to fetch your first real results.</p>
     </div>
+  </div>
 
-    <!-- Last updated -->
-    <div class="px-8 pt-4 flex items-center justify-between">
-      <p class="text-xs text-gray-600" id="last-updated"></p>
-    </div>
-
-    <div class="p-8 pt-4 space-y-6">
-
-      <!-- ── STAT CARDS ── -->
-      <div class="grid grid-cols-5 gap-4">
-
-        <!-- AI Citations -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <p class="text-xs text-gray-400 font-medium">AI Citations</p>
-              <p class="text-2xl font-bold text-white mt-1" id="stat-citations">—</p>
-            </div>
-            <canvas id="spark1" width="80" height="40"></canvas>
+  <!-- ════════════ PAGE: REPORTS ════════════ -->
+  <div id="page-reports" class="page p-8">
+    <div class="max-w-2xl">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-4">
+        <h3 class="text-sm font-semibold text-white mb-1">Generate PDF Report</h3>
+        <p class="text-xs text-gray-400 mb-5">Export a snapshot of your AI visibility data including all metrics, charts, and platform breakdowns.</p>
+        <div class="space-y-4">
+          <div><label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Report Title</label><input id="report-title" class="input-field" value="AI Visibility Report — GreenBananaSEO" /></div>
+          <div><label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Date Range</label>
+            <select class="input-field"><option>Last 30 days</option><option>Last 7 days</option><option>All time</option></select>
           </div>
-          <p class="text-xs text-gray-500">Total URL citations found</p>
-        </div>
-
-        <!-- Brand Mentions -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <p class="text-xs text-gray-400 font-medium">Brand Mentions</p>
-              <p class="text-2xl font-bold text-white mt-1" id="stat-mentions">—</p>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Include Sections</label>
+            <div class="space-y-2" id="report-sections">
+              <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked class="rounded border-gray-600 bg-gray-800 text-brand-500">Overview & KPIs</label>
+              <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked class="rounded border-gray-600 bg-gray-800 text-brand-500">AI Engine Coverage</label>
+              <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked class="rounded border-gray-600 bg-gray-800 text-brand-500">Top Cited URLs</label>
+              <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked class="rounded border-gray-600 bg-gray-800 text-brand-500">Competitor Share</label>
+              <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked class="rounded border-gray-600 bg-gray-800 text-brand-500">Prompt Performance</label>
+              <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" class="rounded border-gray-600 bg-gray-800 text-brand-500">Full Mention Log</label>
             </div>
-            <canvas id="spark2" width="80" height="40"></canvas>
           </div>
-          <p class="text-xs text-gray-500">Across all AI platforms</p>
-        </div>
-
-        <!-- Prompts Tracked -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <p class="text-xs text-gray-400 font-medium">Prompts Tracked</p>
-              <p class="text-2xl font-bold text-white mt-1" id="stat-prompts">—</p>
-            </div>
-            <canvas id="spark3" width="80" height="40"></canvas>
-          </div>
-          <p class="text-xs text-gray-500">Active monitoring prompts</p>
-        </div>
-
-        <!-- Platforms -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <p class="text-xs text-gray-400 font-medium">AI Platforms</p>
-              <p class="text-2xl font-bold text-white mt-1" id="stat-platforms">—</p>
-            </div>
-            <canvas id="spark4" width="80" height="40"></canvas>
-          </div>
-          <p class="text-xs text-gray-500">Engines monitored</p>
-        </div>
-
-        <!-- Avg Position -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
-          <div class="flex items-start justify-between mb-3">
-            <div>
-              <p class="text-xs text-gray-400 font-medium">Avg. Position in AI Answers</p>
-              <p class="text-2xl font-bold text-white mt-1" id="stat-avg-pos">—</p>
-            </div>
-            <canvas id="spark5" width="80" height="40"></canvas>
-          </div>
-          <p class="text-xs text-gray-500">Lower is better</p>
+          <button onclick="exportReport()" class="w-full flex items-center justify-center gap-2 py-3 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+            Download PDF Report
+          </button>
         </div>
       </div>
+      <p class="text-xs text-gray-600">Reports are generated client-side from your current data. No data is sent externally.</p>
+    </div>
+  </div>
 
-      <!-- ── ROW 2: Two line charts + Cited URLs table ── -->
-      <div class="grid grid-cols-3 gap-4">
-
-        <!-- AI Citations Over Time -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-white">AI Citations Over Time</h3>
-            <select class="text-xs bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-gray-300 focus:outline-none">
-              <option>Daily</option><option>Weekly</option><option>Monthly</option>
+  <!-- ════════════ PAGE: SETTINGS ════════════ -->
+  <div id="page-settings" class="page p-8 max-w-2xl">
+    <div class="space-y-5">
+      <!-- Brand -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-white mb-4">Brand Settings</h3>
+        <div class="space-y-3">
+          <div><label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Brand Name</label><input id="set-brand-name" class="input-field" placeholder="GreenBananaSEO" /></div>
+          <div><label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Domain</label><input id="set-brand-domain" class="input-field" placeholder="greenbananaseo.com" /></div>
+          <div><label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Industry</label>
+            <select id="set-brand-industry" class="input-field">
+              <option value="seo">SEO / Digital Marketing Agency</option><option value="saas">SaaS / Software</option><option value="ecommerce">E-commerce</option><option value="consulting">Consulting</option><option value="other">Other</option>
             </select>
           </div>
-          <canvas id="citationsChart" height="160"></canvas>
-        </div>
-
-        <!-- Brand Mentions Over Time -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-white">Brand Mentions Over Time</h3>
-            <select class="text-xs bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-gray-300 focus:outline-none">
-              <option>Daily</option><option>Weekly</option><option>Monthly</option>
-            </select>
-          </div>
-          <canvas id="mentionsChart" height="160"></canvas>
-        </div>
-
-        <!-- Cited URLs Table -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-white">Cited URLs</h3>
-            <a href="#" class="text-xs text-brand-400 hover:text-brand-300 font-medium">View all →</a>
-          </div>
-          <div class="text-xs text-gray-500 flex justify-between mb-2 px-1">
-            <span>URL</span><span>Citations</span>
-          </div>
-          <div class="space-y-2" id="cited-urls-list">
-            <!-- filled by JS -->
-          </div>
         </div>
       </div>
-
-      <!-- ── ROW 3: Competitor Share + Referral Traffic + AI Engine Coverage ── -->
-      <div class="grid grid-cols-3 gap-4">
-
-        <!-- Competitor Share -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-white">Competitor Share</h3>
-            <svg class="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01"/></svg>
-          </div>
-          <div class="flex items-center gap-6">
-            <div class="relative w-32 h-32 flex-shrink-0">
-              <canvas id="donutChart"></canvas>
-              <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <span class="text-xl font-bold text-white" id="brand-share-pct">—</span>
-                <span class="text-[10px] text-gray-400">Your Brand</span>
-              </div>
-            </div>
-            <div class="space-y-2 flex-1" id="donut-legend">
-              <p class="text-xs text-gray-600">Loading…</p>
-            </div>
-          </div>
-          <div class="mt-4 pt-3 border-t border-gray-800 flex items-center gap-2 text-xs text-gray-400">
-            <svg class="w-3.5 h-3.5 text-brand-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
-            Share of voice based on brand vs competitor mentions across all AI platforms.
-          </div>
-        </div>
-
-        <!-- AI Referral Traffic -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-white">AI Referral Traffic Over Time</h3>
-            <select class="text-xs bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-gray-300 focus:outline-none">
-              <option>Daily</option><option>Weekly</option><option>Monthly</option>
-            </select>
-          </div>
-          <canvas id="trafficChart" height="160"></canvas>
-        </div>
-
-        <!-- AI Engine Coverage -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-white">AI Engine Coverage</h3>
-            <svg class="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01"/></svg>
-          </div>
-          <div class="grid grid-cols-5 gap-2 mb-5" id="engine-grid">
-            <!-- filled by JS -->
-          </div>
-          <div class="flex items-center gap-4 text-[10px] text-gray-400 border-t border-gray-800 pt-3">
-            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-brand-500"></span>High (80%+)</div>
-            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-yellow-500"></span>Medium (50–79%)</div>
-            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-gray-500"></span>Low (&lt;50%)</div>
-          </div>
+      <!-- Competitors -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <h3 class="text-sm font-semibold text-white mb-4">Competitors <span class="text-gray-500 font-normal text-xs">— max 3</span></h3>
+        <div class="space-y-2">
+          <div class="flex gap-2"><input id="set-comp1-domain" class="input-field flex-1" placeholder="competitor.com" /><input id="set-comp1-name" class="input-field w-32" placeholder="Name" /></div>
+          <div class="flex gap-2"><input id="set-comp2-domain" class="input-field flex-1" placeholder="competitor.com" /><input id="set-comp2-name" class="input-field w-32" placeholder="Name" /></div>
+          <div class="flex gap-2"><input id="set-comp3-domain" class="input-field flex-1" placeholder="competitor.com" /><input id="set-comp3-name" class="input-field w-32" placeholder="Name" /></div>
         </div>
       </div>
-
-      <!-- ── SENTIMENT + PROMPTS ROW ── -->
-      <div class="grid grid-cols-2 gap-4">
-
-        <!-- Sentiment Analysis -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-white">Brand Sentiment in AI Responses</h3>
-            <span class="text-[10px] bg-brand-500/20 text-brand-400 px-2 py-0.5 rounded-full font-medium">Live</span>
-          </div>
-          <div class="flex items-center gap-6">
-            <div class="flex-1 space-y-3">
-              <div>
-                <div class="flex justify-between text-xs mb-1"><span class="text-gray-300">Positive</span><span class="text-brand-400 font-semibold" id="sent-pos-pct">—</span></div>
-                <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div id="sent-pos-bar" class="h-full bg-brand-500 rounded-full" style="width:0%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between text-xs mb-1"><span class="text-gray-300">Neutral</span><span class="text-gray-400 font-semibold" id="sent-neu-pct">—</span></div>
-                <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div id="sent-neu-bar" class="h-full bg-gray-500 rounded-full" style="width:0%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between text-xs mb-1"><span class="text-gray-300">Negative</span><span class="text-red-400 font-semibold" id="sent-neg-pct">—</span></div>
-                <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div id="sent-neg-bar" class="h-full bg-red-500 rounded-full" style="width:0%"></div></div>
-              </div>
-            </div>
-            <div class="text-center">
-              <div class="text-4xl font-bold text-brand-400" id="sent-score">—</div>
-              <div class="text-xs text-gray-400 mt-1">Sentiment<br>Score</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Top Performing Prompts -->
-        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-white">Top Performing Prompts</h3>
-            <a href="#" class="text-xs text-brand-400 hover:text-brand-300 font-medium">Manage prompts →</a>
-          </div>
-          <div class="space-y-2" id="prompts-list">
-            <!-- filled by JS -->
-          </div>
-        </div>
+      <!-- Prompts -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">Tracking Prompts</h3><span class="text-xs text-gray-500" id="set-prompt-count">0 / 20</span></div>
+        <div class="flex gap-2 mb-3"><input id="set-prompt-input" class="input-field flex-1" placeholder="Add a new prompt…" /><button onclick="settingsAddPrompt()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg">Add</button></div>
+        <div id="set-prompts-list" class="space-y-1.5 max-h-60 overflow-y-auto"></div>
       </div>
-
-    </div><!-- /content -->
-
-    <!-- Footer -->
-    <div class="px-8 pb-6 mt-auto">
-      <p class="text-xs text-gray-600">Metrics are aggregated across major AI engines and may not include all sources. Data is updated daily.</p>
+      <!-- Save -->
+      <button onclick="saveSettings()" class="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-lg transition-colors">Save Settings</button>
+      <div id="settings-saved" class="hidden text-center text-sm text-brand-400 font-medium">✓ Settings saved! Run a new poll to see updated results.</div>
     </div>
-  </main>
+  </div>
 
-  <script>
-    // ═══════════════════ THEME ═══════════════════
-    function toggleTheme() {
-      const html = document.documentElement;
-      const isDark = html.classList.contains('dark');
-      html.classList.toggle('dark', !isDark);
-      html.classList.toggle('light', isDark);
-      document.body.classList.toggle('bg-gray-950', !isDark);
-      document.body.classList.toggle('bg-gray-50', isDark);
-      document.body.classList.toggle('text-gray-100', !isDark);
-      document.body.classList.toggle('text-gray-900', isDark);
-      document.getElementById('theme-icon-dark').classList.toggle('hidden', isDark);
-      document.getElementById('theme-icon-light').classList.toggle('hidden', !isDark);
-      updateChartsTheme(!isDark ? 'dark' : 'light');
-    }
+  <div class="px-8 pb-6 mt-auto"><p class="text-xs text-gray-700">Metrics aggregated across AI engines. Data updates each poll run.</p></div>
+</main>
 
-    // ═══════════════════ CHART.JS DEFAULTS ═══════════════════
-    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    Chart.defaults.font.size = 11;
-    Chart.defaults.color = '#9ca3af';
+<script>
+// ══════════════════════════════════════════════
+// STATE & CACHE
+// ══════════════════════════════════════════════
+let _stats = null, _results = null, _config = null;
+let _charts = {};
+const PLATFORMS = ['chatgpt','claude','perplexity','google_aio'];
+const P_LABELS  = { chatgpt:'ChatGPT', claude:'Claude', perplexity:'Perplexity', google_aio:'Google AIO' };
+const P_ICONS   = { chatgpt:'💬', claude:'✳', perplexity:'⬡', google_aio:'⊕' };
+const P_COLORS  = ['#22c55e','#86efac','#6b7280','#4b5563'];
 
-    function lineGradient(ctx, color1, color2) {
-      const g = ctx.createLinearGradient(0, 0, 0, 200);
-      g.addColorStop(0, color1); g.addColorStop(1, color2);
-      return g;
-    }
+Chart.defaults.font.family = '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
+Chart.defaults.font.size   = 11;
+Chart.defaults.color       = '#9ca3af';
 
-    function drawSparkline(canvasId, data) {
-      const canvas = document.getElementById(canvasId);
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width, h = canvas.height;
-      const min = Math.min(...data), max = Math.max(...data);
-      const range = max - min || 1;
-      const pts = data.map((v,j) => [j / (data.length-1) * w, h - (v-min)/range * (h-4) - 2]);
-      const grad = ctx.createLinearGradient(0,0,w,0);
-      grad.addColorStop(0,'#16a34a'); grad.addColorStop(1,'#4ade80');
-      ctx.clearRect(0,0,w,h);
-      ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-      ctx.beginPath(); pts.forEach(([x,y],j) => j===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y));
-      ctx.stroke();
-      ctx.fillStyle = '#4ade80';
-      ctx.beginPath(); ctx.arc(pts[pts.length-1][0], pts[pts.length-1][1], 2.5, 0, Math.PI*2); ctx.fill();
-    }
+// ══════════════════════════════════════════════
+// ROUTER
+// ══════════════════════════════════════════════
+const PAGE_META = {
+  overview:     { title:'AI Citation Tracking Dashboard', sub:'Monitor how your brand is cited across AI engines and track visibility over time.' },
+  citations:    { title:'AI Citations', sub:'Every event where your brand URL was cited by an AI engine.' },
+  mentions:     { title:'Brand Mentions', sub:'Track when and how AI engines mention your brand by name.' },
+  urls:         { title:'Cited URLs', sub:'Which pages on your site AI engines link to and recommend.' },
+  competitors:  { title:'Competitors', sub:'Compare your AI share of voice against your competitors.' },
+  traffic:      { title:'Referral Traffic', sub:'AI-driven traffic signals and referral patterns.' },
+  engines:      { title:'AI Engines', sub:'Deep-dive coverage and performance per AI platform.' },
+  opportunities:{ title:'Opportunities', sub:'Gaps, underperforming prompts, and suggested tracking prompts.' },
+  content:      { title:'Content', sub:'Inventory of your cited pages and their AI citation history.' },
+  alerts:       { title:'Alerts', sub:'Get notified when your visibility changes significantly.' },
+  reports:      { title:'Reports', sub:'Export a PDF summary of your AI visibility data.' },
+  settings:     { title:'Settings', sub:'Manage your brand, competitors, prompts, and configuration.' },
+};
 
-    let citChart, menChart, donutChart, trafChart;
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.remove('active');
+    n.classList.add('text-gray-400','hover:text-white','hover:bg-gray-800');
+  });
+  document.getElementById('page-' + page)?.classList.add('active');
+  const navEl = [...document.querySelectorAll('.nav-item')].find(el => el.getAttribute('onclick')?.includes(`'${page}'`));
+  if (navEl) { navEl.classList.add('active'); navEl.classList.remove('text-gray-400','hover:text-white','hover:bg-gray-800'); }
+  const meta = PAGE_META[page] || {};
+  document.getElementById('page-title').textContent    = meta.title || page;
+  document.getElementById('page-subtitle').textContent = meta.sub   || '';
+  renderPage(page);
+}
 
-    // ═══════════════════ LIVE DATA FETCH ═══════════════════
-    async function loadDashboard() {
-      const [statsRes, configRes] = await Promise.all([
-        fetch('/api/stats'), fetch('/api/config')
-      ]);
-      const stats  = await statsRes.json();
-      const config = await configRes.json();
+async function renderPage(page) {
+  if (!_stats) await loadData();
+  if (!_stats?.ready) return;
+  const fns = { overview, citations, mentions, urls, competitors, traffic, engines, opportunities, content, settings: settingsInit };
+  fns[page]?.();
+}
 
-      if (!stats.ready) {
-        showNoPollBanner();
-        return;
+// ══════════════════════════════════════════════
+// DATA LOADING
+// ══════════════════════════════════════════════
+async function loadData() {
+  const [sr, rr, cr] = await Promise.all([
+    fetch('/api/stats'), fetch('/api/results'), fetch('/api/config')
+  ]);
+  _stats   = await sr.json();
+  _results = await rr.json();
+  _config  = await cr.json();
+  if (_stats.lastUpdated) {
+    const d = new Date(_stats.lastUpdated);
+    document.getElementById('last-updated').textContent = 'Last polled ' + d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  }
+}
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+function mkChart(id, config) {
+  if (_charts[id]) _charts[id].destroy();
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  _charts[id] = new Chart(ctx, config);
+  return _charts[id];
+}
+function lineGrad(ctx, c1, c2) { const g=ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,c1); g.addColorStop(1,c2); return g; }
+function barGrad(ctx, c1, c2)  { const g=ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,c1); g.addColorStop(1,c2); return g; }
+function drawSpark(id, data) {
+  const c=document.getElementById(id); if(!c) return;
+  const ctx=c.getContext('2d'),w=c.width,h=c.height;
+  const d=data.length<2?[...data,...data]:data;
+  const mn=Math.min(...d),mx=Math.max(...d),r=mx-mn||1;
+  const pts=d.map((v,j)=>[j/(d.length-1)*w, h-(v-mn)/r*(h-4)-2]);
+  ctx.clearRect(0,0,w,h);
+  const gr=ctx.createLinearGradient(0,0,w,0); gr.addColorStop(0,'#16a34a'); gr.addColorStop(1,'#4ade80');
+  ctx.strokeStyle=gr; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.lineCap='round';
+  ctx.beginPath(); pts.forEach(([x,y],j)=>j===0?ctx.moveTo(x,y):ctx.lineTo(x,y)); ctx.stroke();
+  ctx.fillStyle='#4ade80'; ctx.beginPath(); ctx.arc(pts[pts.length-1][0],pts[pts.length-1][1],2.5,0,Math.PI*2); ctx.fill();
+}
+function sentBadge(s) { return s==='positive'?'<span class="badge-high px-2 py-0.5 rounded text-[10px] font-semibold">Positive</span>':s==='negative'?'<span class="badge-low px-2 py-0.5 rounded text-[10px] font-semibold">Negative</span>':'<span class="badge-none px-2 py-0.5 rounded text-[10px] font-semibold">Neutral</span>'; }
+function mentBadge(b,r) { return b?`<span class="badge-high px-2 py-0.5 rounded text-[10px] font-semibold">Yes ${r||''}</span>`:`<span class="badge-none px-2 py-0.5 rounded text-[10px] font-semibold">No</span>`; }
+function truncate(s,n=60) { return s?.length>n?s.slice(0,n)+'…':s; }
+function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
+function timeLabels() { return (_stats.citationsOverTime||[]).map(d=>{ const dt=new Date(d.date); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }); }
+
+// ══════════════════════════════════════════════
+// PAGE: OVERVIEW
+// ══════════════════════════════════════════════
+function overview() {
+  const s=_stats; if(!s?.ready) return;
+  const c=_config;
+
+  document.getElementById('stat-citations').textContent  = s.totalCitations;
+  document.getElementById('stat-mentions').textContent   = s.totalMentions;
+  document.getElementById('stat-prompts').textContent    = c?.prompts?.length || 0;
+  document.getElementById('stat-platforms').textContent  = s.engineCoverage?.filter(e=>e.runs>0).length || 0;
+  document.getElementById('stat-avg-pos').textContent    = s.avgPosition || '—';
+
+  const citC=s.citationsOverTime?.map(d=>d.count)||[0];
+  const menC=s.mentionsOverTime?.map(d=>d.count)||[0];
+  drawSpark('spark1', citC); drawSpark('spark2', menC);
+  drawSpark('spark3', [c?.prompts?.length||0]); drawSpark('spark4', s.engineCoverage?.map(e=>e.pct)||[0]);
+  drawSpark('spark5', s.engineCoverage?.map(e=>100-e.pct)||[0]);
+
+  const tl = timeLabels();
+  const citCtx=document.getElementById('citationsChart').getContext('2d');
+  mkChart('citationsChart',{type:'line',data:{labels:tl,datasets:[{data:citC,borderColor:'#22c55e',borderWidth:2,backgroundColor:lineGrad(citCtx,'rgba(34,197,94,.3)','rgba(34,197,94,0)'),fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#22c55e',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:true}});
+
+  const menCtx=document.getElementById('mentionsChart').getContext('2d');
+  mkChart('mentionsChart',{type:'line',data:{labels:tl,datasets:[{data:menC,borderColor:'#86efac',borderWidth:2,backgroundColor:lineGrad(menCtx,'rgba(134,239,172,.25)','rgba(134,239,172,0)'),fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#86efac',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:true}});
+
+  // Cited URLs mini
+  const urlEl=document.getElementById('ov-cited-urls'); urlEl.innerHTML='';
+  (s.topURLs?.slice(0,5)||[]).forEach(r=>{
+    const sh=r.url.replace(/^https?:\/\//,'').replace(/^www\./,'');
+    urlEl.innerHTML+=`<div class="flex items-center justify-between py-1.5 border-b border-gray-800 last:border-0"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 flex-shrink-0 mr-2"></span><span class="text-xs text-gray-300 truncate flex-1 mr-2" title="${r.url}">${sh}</span><span class="text-xs font-semibold text-white">${r.count}</span></div>`;
+  });
+  if(!s.topURLs?.length) urlEl.innerHTML='<p class="text-xs text-gray-600 py-4 text-center">No citations yet</p>';
+
+  // Engine grid
+  const eg=document.getElementById('engine-grid'); eg.innerHTML='';
+  (s.engineCoverage||[]).forEach(e=>{
+    const col=e.pct>=80?'text-brand-400':e.pct>=50?'text-yellow-400':'text-gray-400';
+    const lbl=e.pct>=80?'High':e.pct>=50?'Med':'Low';
+    eg.innerHTML+=`<div class="flex flex-col items-center gap-1 bg-gray-800/50 rounded-lg p-2"><span class="text-base">${P_ICONS[e.platform]||'○'}</span><span class="text-[9px] text-gray-400 text-center leading-tight">${P_LABELS[e.platform]||e.label}</span><span class="text-sm font-bold ${col}">${e.runs>0?e.pct+'%':'—'}</span><span class="text-[9px] ${col}">${e.runs>0?lbl:'No data'}</span></div>`;
+  });
+
+  // Donut
+  const compNames=[c?.brand?.name||'Your Brand',...Object.keys(s.competitorCounts||{})];
+  const compVals=[s.totalMentions,...Object.values(s.competitorCounts||{})];
+  const tot=compVals.reduce((a,b)=>a+b,0)||1;
+  const cpcts=compVals.map(v=>+((v/tot)*100).toFixed(1));
+  document.getElementById('brand-share-pct').textContent=cpcts[0]+'%';
+  mkChart('donutChart',{type:'doughnut',data:{labels:compNames,datasets:[{data:cpcts,backgroundColor:P_COLORS,borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}%`}}},responsive:true,maintainAspectRatio:true}});
+  const dl=document.getElementById('donut-legend'); dl.innerHTML='';
+  compNames.forEach((n,i)=>{ dl.innerHTML+=`<div class="flex items-center justify-between"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${P_COLORS[i]||'#374151'}"></span><span class="text-gray-300">${n}</span></div><span class="font-semibold text-white ml-4">${cpcts[i]}%</span></div>`; });
+
+  // Traffic bar
+  const trafCtx=document.getElementById('trafficChart').getContext('2d');
+  mkChart('trafficChart',{type:'bar',data:{labels:tl,datasets:[{data:menC,backgroundColor:barGrad(trafCtx,'rgba(34,197,94,.9)','rgba(34,197,94,.4)'),borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:5}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:true}});
+
+  // Sentiment
+  const sp=s.sentimentPcts||{positive:0,neutral:0,negative:0};
+  document.getElementById('sent-pos-bar').style.width=sp.positive+'%'; document.getElementById('sent-pos-pct').textContent=sp.positive+'%';
+  document.getElementById('sent-neu-bar').style.width=sp.neutral+'%';  document.getElementById('sent-neu-pct').textContent=sp.neutral+'%';
+  document.getElementById('sent-neg-bar').style.width=sp.negative+'%'; document.getElementById('sent-neg-pct').textContent=sp.negative+'%';
+  document.getElementById('sent-score').textContent=sp.positive;
+
+  // Prompts
+  const pl=document.getElementById('prompts-list'); pl.innerHTML='';
+  (s.promptStats||[]).forEach(p=>{
+    const col=p.pct>=80?'#22c55e':p.pct>=50?'#eab308':'#ef4444';
+    pl.innerHTML+=`<div class="flex items-center gap-3"><div class="flex-1 min-w-0"><p class="text-xs text-gray-300 truncate" title="${p.prompt}">${p.prompt}</p><div class="mt-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${p.pct}%;background:${col}"></div></div></div><div class="text-right flex-shrink-0"><span class="text-xs font-bold text-white">${p.pct}%</span><p class="text-[10px] text-gray-500">${p.runs} poll${p.runs!==1?'s':''}</p></div></div>`;
+  });
+  if(!s.promptStats?.length) pl.innerHTML='<p class="text-xs text-gray-600 py-4 text-center">No prompt data yet — run a poll first.</p>';
+}
+
+// ══════════════════════════════════════════════
+// PAGE: AI CITATIONS
+// ══════════════════════════════════════════════
+function citations() {
+  const rows=[];
+  (_results||[]).forEach(r=>{
+    PLATFORMS.forEach(p=>{
+      const pr=r.platformResults?.[p]; if(!pr||pr.error) return;
+      if(pr.citedBrandURLs?.length||pr.mentioned) {
+        rows.push({date:r.timestamp,prompt:r.prompt,platform:p,mentioned:pr.mentioned,mentionRate:pr.mentionRate,position:pr.position,sentiment:pr.sentiment,citedURLs:pr.citedBrandURLs||[]});
       }
+    });
+  });
+  const cited=rows.filter(r=>r.citedURLs.length>0);
+  document.getElementById('cit-count').textContent=cited.length+' citation events';
 
-      // ── Update page title with brand name ──
-      if (config.brand?.name) {
-        document.title = `${config.brand.name} — AI Visibility Tracker`;
-        document.querySelectorAll('.brand-name').forEach(el => el.textContent = config.brand.name);
-      }
+  // Stat cards
+  const cs=document.getElementById('cit-stats');
+  const statData=[
+    {label:'Total Citation Events',val:cited.length,sub:'Across all platforms'},
+    {label:'Unique Cited URLs',val:new Set(cited.flatMap(r=>r.citedURLs)).size,sub:'Distinct pages cited'},
+    {label:'Most Active Platform',val:PLATFORMS.reduce((a,b)=>rows.filter(r=>r.platform===b).length>rows.filter(r=>r.platform===a).length?b:a,PLATFORMS[0]),sub:'By citation count',fmt:p=>P_LABELS[p]||p},
+    {label:'Avg Citations/Poll',val:(_results?.length?cited.length/_results.length:0).toFixed(1),sub:'Per poll run'},
+  ];
+  cs.innerHTML=statData.map(s=>`<div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">${s.label}</p><p class="text-2xl font-bold text-white mt-1">${s.fmt?s.fmt(s.val):s.val}</p><p class="text-xs text-gray-500 mt-1">${s.sub}</p></div>`).join('');
 
-      // ── Last updated badge ──
-      if (stats.lastUpdated) {
-        const d = new Date(stats.lastUpdated);
-        document.getElementById('last-updated').textContent = 'Updated ' + d.toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-      }
+  const tb=document.getElementById('cit-table'); tb.innerHTML='';
+  if(!rows.length){tb.innerHTML='<tr><td colspan="7" class="px-5 py-8 text-center text-gray-600">No data yet — run a poll to see results.</td></tr>';return;}
+  rows.slice().reverse().forEach(r=>{
+    tb.innerHTML+=`<tr class="hover:bg-gray-800/40">
+      <td class="px-5 py-3 text-gray-400 whitespace-nowrap">${fmtDate(r.date)}</td>
+      <td class="px-5 py-3 text-gray-300 max-w-xs"><span class="truncate block" title="${r.prompt}">${truncate(r.prompt,50)}</span></td>
+      <td class="px-5 py-3 text-gray-300">${P_LABELS[r.platform]}</td>
+      <td class="px-5 py-3">${mentBadge(r.mentioned,r.mentionRate)}</td>
+      <td class="px-5 py-3 text-gray-300">${r.position||'—'}</td>
+      <td class="px-5 py-3">${sentBadge(r.sentiment)}</td>
+      <td class="px-5 py-3"><div class="space-y-0.5">${r.citedURLs.slice(0,2).map(u=>`<a href="${u}" target="_blank" class="text-brand-400 hover:text-brand-300 block truncate max-w-[200px]" title="${u}">${u.replace(/^https?:\/\//,'').slice(0,40)}</a>`).join('')}${r.citedURLs.length>2?`<span class="text-gray-500">+${r.citedURLs.length-2} more</span>`:''}</div></td>
+    </tr>`;
+  });
+}
 
-      // ── Stat cards ──
-      const platforms = ['chatgpt','claude','perplexity','google_aio'];
-      const totalMentions  = stats.totalMentions;
-      const totalCitations = stats.totalCitations;
-      const avgPos         = stats.avgPosition || '—';
+// ══════════════════════════════════════════════
+// PAGE: BRAND MENTIONS
+// ══════════════════════════════════════════════
+function mentions() {
+  const rows=[];
+  (_results||[]).forEach(r=>{
+    PLATFORMS.forEach(p=>{
+      const pr=r.platformResults?.[p]; if(!pr||pr.error) return;
+      rows.push({date:r.timestamp,prompt:r.prompt,platform:p,...pr,snippet:(pr.response||'').slice(0,150)});
+    });
+  });
+  const mentioned=rows.filter(r=>r.mentioned);
 
-      document.getElementById('stat-mentions').textContent   = totalMentions.toLocaleString();
-      document.getElementById('stat-citations').textContent  = totalCitations.toLocaleString();
-      document.getElementById('stat-avg-pos').textContent    = avgPos;
-      document.getElementById('stat-prompts').textContent    = (config.prompts?.length || 0).toString();
-      document.getElementById('stat-platforms').textContent  = stats.engineCoverage?.filter(e => e.runs > 0).length || 0;
+  // Stat cards
+  const ms=document.getElementById('men-stats');
+  const pctOverall=rows.length?Math.round(mentioned.length/rows.length*100):0;
+  ms.innerHTML=[
+    {label:'Total Mentions',val:mentioned.length,sub:'Brand named in AI responses'},
+    {label:'Overall Mention Rate',val:pctOverall+'%',sub:'Across all platforms & prompts'},
+    {label:'Best Platform',val:P_LABELS[PLATFORMS.reduce((a,b)=>mentioned.filter(r=>r.platform===b).length>mentioned.filter(r=>r.platform===a).length?b:a,PLATFORMS[0])]||'—',sub:'Highest mention rate'},
+    {label:'Avg. Position',val:_stats?.avgPosition||'—',sub:'When mentioned (lower=better)'},
+  ].map(s=>`<div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">${s.label}</p><p class="text-2xl font-bold text-white mt-1">${s.val}</p><p class="text-xs text-gray-500 mt-1">${s.sub}</p></div>`).join('');
 
-      // ── Sparklines (based on citations over time) ──
-      const citCounts = stats.citationsOverTime?.map(d => d.count) || [0];
-      const menCounts = stats.mentionsOverTime?.map(d => d.count)  || [0];
-      const pad = arr => arr.length < 2 ? [...arr, ...arr] : arr;
-      drawSparkline('spark1', pad(citCounts));
-      drawSparkline('spark2', pad(menCounts));
-      drawSparkline('spark3', pad(citCounts));
-      drawSparkline('spark4', pad(menCounts.map(v => v * 3)));
-      drawSparkline('spark5', pad(stats.engineCoverage?.map(e => e.pct) || [50]));
+  // Platform bar chart
+  const platMentions=PLATFORMS.map(p=>mentioned.filter(r=>r.platform===p).length);
+  const platTotal=PLATFORMS.map(p=>rows.filter(r=>r.platform===p).length);
+  const platPct=PLATFORMS.map((p,i)=>platTotal[i]?Math.round(platMentions[i]/platTotal[i]*100):0);
+  mkChart('men-platform-chart',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:'Mention Rate %',data:platPct,backgroundColor:['rgba(34,197,94,.8)','rgba(134,239,172,.8)','rgba(107,114,128,.8)','rgba(75,85,99,.8)'],borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'},max:100,beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
 
-      // ── Citations Over Time chart ──
-      const timeLabels = stats.citationsOverTime?.map(d => {
-        const dt = new Date(d.date);
-        return dt.toLocaleDateString('en-US', { month:'short', day:'numeric' });
-      }) || [];
+  // Prompt rates
+  const pr=document.getElementById('men-prompt-rates'); pr.innerHTML='';
+  (_stats?.promptStats||[]).forEach(p=>{
+    const col=p.pct>=80?'#22c55e':p.pct>=50?'#eab308':'#ef4444';
+    pr.innerHTML+=`<div class="flex items-center gap-3"><div class="flex-1 min-w-0"><p class="text-xs text-gray-300 truncate" title="${p.prompt}">${truncate(p.prompt,45)}</p><div class="mt-1 h-1.5 bg-gray-800 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:${p.pct}%;background:${col}"></div></div></div><span class="text-xs font-bold text-white flex-shrink-0">${p.pct}%</span></div>`;
+  });
 
-      const citCtx = document.getElementById('citationsChart').getContext('2d');
-      const citFill = lineGradient(citCtx,'rgba(34,197,94,0.3)','rgba(34,197,94,0.0)');
-      if (citChart) citChart.destroy();
-      citChart = new Chart(citCtx, {
-        type:'line',
-        data:{ labels: timeLabels, datasets:[{ data: citCounts, borderColor:'#22c55e', borderWidth:2,
-          backgroundColor:citFill, fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#22c55e',
-          pointBorderColor:'#111827', pointBorderWidth:2 }]},
-        options:{ plugins:{legend:{display:false}}, scales:{
-          x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{maxRotation:0, maxTicksLimit:6} },
-          y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{maxTicksLimit:5}, beginAtZero:true }
-        }, responsive:true, maintainAspectRatio:true }
-      });
+  // Table
+  const tb=document.getElementById('men-table'); tb.innerHTML='';
+  if(!rows.length){tb.innerHTML='<tr><td colspan="7" class="px-5 py-8 text-center text-gray-600">No data yet.</td></tr>';return;}
+  rows.slice().reverse().forEach(r=>{
+    tb.innerHTML+=`<tr class="hover:bg-gray-800/40">
+      <td class="px-5 py-3 text-gray-400 whitespace-nowrap text-[11px]">${fmtDate(r.date)}</td>
+      <td class="px-5 py-3 text-gray-300 max-w-[160px]"><span class="truncate block" title="${r.prompt}">${truncate(r.prompt,40)}</span></td>
+      <td class="px-5 py-3 text-gray-300">${P_LABELS[r.platform]}</td>
+      <td class="px-5 py-3 text-gray-300">${r.position||'—'}</td>
+      <td class="px-5 py-3">${sentBadge(r.sentiment)}</td>
+      <td class="px-5 py-3">${mentBadge(r.mentioned,r.mentionRate)}</td>
+      <td class="px-5 py-3 text-gray-400 max-w-xs"><span class="truncate block" title="${r.snippet}">${truncate(r.snippet,60)}</span></td>
+    </tr>`;
+  });
+}
 
-      // ── Brand Mentions Over Time chart ──
-      const menCtx = document.getElementById('mentionsChart').getContext('2d');
-      const menFill = lineGradient(menCtx,'rgba(134,239,172,0.25)','rgba(134,239,172,0.0)');
-      if (menChart) menChart.destroy();
-      menChart = new Chart(menCtx, {
-        type:'line',
-        data:{ labels: timeLabels, datasets:[{ data: menCounts, borderColor:'#86efac', borderWidth:2,
-          backgroundColor:menFill, fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#86efac',
-          pointBorderColor:'#111827', pointBorderWidth:2 }]},
-        options:{ plugins:{legend:{display:false}}, scales:{
-          x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{maxRotation:0, maxTicksLimit:6} },
-          y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{maxTicksLimit:5}, beginAtZero:true }
-        }, responsive:true, maintainAspectRatio:true }
-      });
-
-      // ── Cited URLs table ──
-      const urlsList = document.getElementById('cited-urls-list');
-      urlsList.innerHTML = '';
-      const urls = stats.topURLs?.slice(0,5) || [];
-      if (urls.length === 0) {
-        urlsList.innerHTML = '<p class="text-xs text-gray-600 py-4 text-center">No cited URLs yet — run more polls to build data.</p>';
-      } else {
-        urls.forEach(r => {
-          const short = r.url.replace(/^https?:\/\//, '').replace(/^www\./, '');
-          urlsList.innerHTML += `
-            <div class="flex items-center justify-between py-1.5 border-b border-gray-800 last:border-0">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="w-1.5 h-1.5 rounded-full bg-brand-500 flex-shrink-0"></span>
-                <span class="text-xs text-gray-300 truncate max-w-[160px]" title="${r.url}">${short}</span>
-              </div>
-              <span class="text-xs font-semibold text-white flex-shrink-0 ml-3">${r.count}</span>
-            </div>`;
-        });
-      }
-
-      // ── Engine Coverage grid ──
-      const engineGrid = document.getElementById('engine-grid');
-      engineGrid.innerHTML = '';
-      const engineMeta = {
-        chatgpt:    { label:'ChatGPT',         icon:'💬' },
-        claude:     { label:'Claude',           icon:'✳'  },
-        perplexity: { label:'Perplexity',       icon:'⬡'  },
-        google_aio: { label:'Google AI\nOverviews', icon:'⊕' },
-      };
-      (stats.engineCoverage || []).forEach(e => {
-        const meta  = engineMeta[e.platform] || { label: e.label, icon: '○' };
-        const color = e.pct >= 80 ? 'text-brand-400' : e.pct >= 50 ? 'text-yellow-400' : 'text-gray-400';
-        const label = e.pct >= 80 ? 'High' : e.pct >= 50 ? 'Medium' : 'Low';
-        engineGrid.innerHTML += `
-          <div class="flex flex-col items-center gap-1 bg-gray-800/50 rounded-lg p-2">
-            <span class="text-lg">${meta.icon}</span>
-            <span class="text-[10px] text-gray-400 text-center leading-tight">${meta.label.replace('\n','<br>')}</span>
-            <span class="text-sm font-bold ${color}">${e.runs > 0 ? e.pct+'%' : '—'}</span>
-            <span class="text-[10px] font-medium ${color}">${e.runs > 0 ? label : 'No data'}</span>
-          </div>`;
-      });
-
-      // ── Competitor donut ──
-      const compData  = stats.competitorCounts || {};
-      const compNames = [config.brand?.name || 'Your Brand', ...Object.keys(compData)];
-      const brandMentionTotal = totalMentions;
-      const compValues = [brandMentionTotal, ...Object.values(compData)];
-      const total = compValues.reduce((a,b)=>a+b,0) || 1;
-      const compPcts = compValues.map(v => +((v/total)*100).toFixed(1));
-
-      if (donutChart) donutChart.destroy();
-      donutChart = new Chart(document.getElementById('donutChart'), {
-        type:'doughnut',
-        data:{ labels: compNames, datasets:[{
-          data: compPcts,
-          backgroundColor:['#22c55e','#86efac','#6b7280','#4b5563'],
-          borderWidth:0, hoverOffset:4
-        }]},
-        options:{ cutout:'72%', plugins:{ legend:{display:false},
-          tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw}%` }}
-        }, responsive:true, maintainAspectRatio:true }
-      });
-
-      // Update donut legend
-      const legendEl = document.getElementById('donut-legend');
-      if (legendEl) {
-        legendEl.innerHTML = '';
-        const colors = ['bg-brand-500','bg-brand-300','bg-gray-500','bg-gray-600'];
-        compNames.forEach((name, i) => {
-          legendEl.innerHTML += `
-            <div class="flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ${colors[i]||'bg-gray-700'} flex-shrink-0"></span><span class="text-gray-300">${name}</span></div>
-              <span class="font-semibold text-white">${compPcts[i]}%</span>
-            </div>`;
-        });
-      }
-      document.getElementById('brand-share-pct').textContent = compPcts[0] + '%';
-
-      // ── AI Referral Traffic (mentions as proxy) ──
-      const trafCtx = document.getElementById('trafficChart').getContext('2d');
-      const barGrad = trafCtx.createLinearGradient(0,0,0,200);
-      barGrad.addColorStop(0,'rgba(34,197,94,0.9)'); barGrad.addColorStop(1,'rgba(34,197,94,0.4)');
-      if (trafChart) trafChart.destroy();
-      trafChart = new Chart(trafCtx, {
-        type:'bar',
-        data:{ labels: timeLabels, datasets:[{ data: menCounts, backgroundColor:barGrad,
-          borderRadius:4, borderSkipped:false }]},
-        options:{ plugins:{legend:{display:false}}, scales:{
-          x:{ grid:{display:false}, ticks:{maxRotation:0, maxTicksLimit:6} },
-          y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{maxTicksLimit:5}, beginAtZero:true }
-        }, responsive:true, maintainAspectRatio:true }
-      });
-
-      // ── Sentiment bars ──
-      const s = stats.sentimentPcts || { positive:0, neutral:0, negative:0 };
-      document.getElementById('sent-pos-bar').style.width  = s.positive + '%';
-      document.getElementById('sent-neu-bar').style.width  = s.neutral  + '%';
-      document.getElementById('sent-neg-bar').style.width  = s.negative + '%';
-      document.getElementById('sent-pos-pct').textContent  = s.positive + '%';
-      document.getElementById('sent-neu-pct').textContent  = s.neutral  + '%';
-      document.getElementById('sent-neg-pct').textContent  = s.negative + '%';
-      document.getElementById('sent-score').textContent    = s.positive;
-
-      // ── Top Prompts ──
-      const promptsList = document.getElementById('prompts-list');
-      promptsList.innerHTML = '';
-      const promptStats = stats.promptStats || [];
-      if (promptStats.length === 0) {
-        promptsList.innerHTML = '<p class="text-xs text-gray-600 py-4 text-center">No prompt data yet.</p>';
-      } else {
-        promptStats.forEach(p => {
-          const color = p.pct >= 80 ? '#22c55e' : p.pct >= 50 ? '#eab308' : '#ef4444';
-          promptsList.innerHTML += `
-            <div class="flex items-center gap-3">
-              <div class="flex-1 min-w-0">
-                <p class="text-xs text-gray-300 truncate" title="${p.prompt}">${p.prompt}</p>
-                <div class="mt-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                  <div class="h-full rounded-full transition-all" style="width:${p.pct}%; background:${color}"></div>
-                </div>
-              </div>
-              <div class="text-right flex-shrink-0">
-                <span class="text-xs font-bold text-white">${p.pct}%</span>
-                <p class="text-[10px] text-gray-500">${p.runs} poll${p.runs!==1?'s':''}</p>
-              </div>
-            </div>`;
-        });
-      }
-    }
-
-    function showNoPollBanner() {
-      document.getElementById('no-data-banner').classList.remove('hidden');
-    }
-
-    function updateChartsTheme(theme) { /* future */ }
-
-    // ── Run poll from dashboard ──
-    async function triggerPoll() {
-      const btn = document.getElementById('run-poll-btn');
-      btn.disabled = true;
-      btn.textContent = 'Running…';
-      await fetch('/api/poll', { method:'POST' });
-      // Poll for completion every 5s
-      const interval = setInterval(async () => {
-        const s = await fetch('/api/poll/status').then(r=>r.json());
-        if (!s.running) {
-          clearInterval(interval);
-          btn.disabled = false;
-          btn.textContent = 'Run Poll Now';
-          await loadDashboard();
-        }
-      }, 5000);
-    }
-
-    loadDashboard();
-
-    // ═══════════════════ SIDEBAR CLICK ═══════════════════
-    document.querySelectorAll('.nav-item').forEach(el => {
-      el.addEventListener('click', e => {
-        e.preventDefault();
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
+// ══════════════════════════════════════════════
+// PAGE: CITED URLS
+// ══════════════════════════════════════════════
+function urls() {
+  const urlMap={};
+  (_results||[]).forEach(r=>{
+    PLATFORMS.forEach(p=>{
+      const pr=r.platformResults?.[p]; if(!pr) return;
+      (pr.citedBrandURLs||[]).forEach(u=>{
+        if(!urlMap[u]) urlMap[u]={url:u,total:0,byPlatform:{},firstSeen:r.timestamp,lastSeen:r.timestamp};
+        urlMap[u].total++;
+        urlMap[u].byPlatform[p]=(urlMap[u].byPlatform[p]||0)+1;
+        if(r.timestamp<urlMap[u].firstSeen) urlMap[u].firstSeen=r.timestamp;
+        if(r.timestamp>urlMap[u].lastSeen)  urlMap[u].lastSeen=r.timestamp;
       });
     });
-  </script>
+  });
+  const urlList=Object.values(urlMap).sort((a,b)=>b.total-a.total);
+  document.getElementById('url-count').textContent=urlList.length+' unique URLs';
+
+  // Bar chart
+  const top8=urlList.slice(0,8);
+  mkChart('url-bar-chart',{type:'bar',data:{labels:top8.map(u=>u.url.replace(/^https?:\/\//,'').slice(0,40)),datasets:[{label:'Citations',data:top8.map(u=>u.total),backgroundColor:'rgba(34,197,94,.8)',borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true},y:{grid:{display:false},ticks:{font:{size:10}}}},responsive:true,maintainAspectRatio:false}});
+
+  // Platform donut
+  const platTotals=PLATFORMS.map(p=>urlList.reduce((s,u)=>s+(u.byPlatform[p]||0),0));
+  mkChart('url-donut-chart',{type:'doughnut',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{data:platTotals,backgroundColor:P_COLORS,borderWidth:0,hoverOffset:4}]},options:{cutout:'65%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}`}}},responsive:true,maintainAspectRatio:false}});
+
+  // Table
+  const tb=document.getElementById('url-table'); tb.innerHTML='';
+  if(!urlList.length){tb.innerHTML='<tr><td colspan="6" class="px-5 py-8 text-center text-gray-600">No cited URLs yet — run a poll first.</td></tr>';return;}
+  urlList.forEach(u=>{
+    const sh=u.url.replace(/^https?:\/\//,'').replace(/^www\./,'');
+    tb.innerHTML+=`<tr class="hover:bg-gray-800/40">
+      <td class="px-5 py-3"><a href="${u.url}" target="_blank" class="text-brand-400 hover:text-brand-300 truncate block max-w-xs" title="${u.url}">${sh}</a></td>
+      <td class="px-5 py-3 font-semibold text-white">${u.total}</td>
+      ${PLATFORMS.map(p=>`<td class="px-5 py-3 text-gray-400">${u.byPlatform[p]||'—'}</td>`).join('')}
+    </tr>`;
+  });
+}
+
+// ══════════════════════════════════════════════
+// PAGE: COMPETITORS
+// ══════════════════════════════════════════════
+function competitors() {
+  const s=_stats, c=_config;
+  const compNames=[c?.brand?.name||'Your Brand',...Object.keys(s.competitorCounts||{})];
+  const compVals=[s.totalMentions,...Object.values(s.competitorCounts||{})];
+  const tot=compVals.reduce((a,b)=>a+b,0)||1;
+  const cpcts=compVals.map(v=>+((v/tot)*100).toFixed(1));
+  document.getElementById('comp-brand-pct').textContent=cpcts[0]+'%';
+
+  mkChart('comp-donut',{type:'doughnut',data:{labels:compNames,datasets:[{data:cpcts,backgroundColor:P_COLORS,borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}%`}}},responsive:true,maintainAspectRatio:true}});
+
+  const cl=document.getElementById('comp-legend'); cl.innerHTML='';
+  compNames.forEach((n,i)=>{ cl.innerHTML+=`<div class="flex items-center justify-between text-xs"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:${P_COLORS[i]||'#374151'}"></span><span class="text-gray-300">${n}</span></div><span class="font-semibold text-white ml-4">${cpcts[i]}%</span></div>`; });
+
+  // H2H by platform
+  const yourCounts  = PLATFORMS.map(p=>(_results||[]).reduce((s,r)=>s+(r.platformResults?.[p]?.mentioned?1:0),0));
+  mkChart('comp-bar-chart',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:c?.brand?.name||'Your Brand',data:yourCounts,backgroundColor:'rgba(34,197,94,.8)',borderRadius:4,borderSkipped:false},...compNames.slice(1).map((n,i)=>({label:n,data:PLATFORMS.map(p=>(_results||[]).reduce((s,r)=>{const txt=(r.platformResults?.[p]?.response||'').toLowerCase();const cd=(c?.competitors?.[i]?.domain||'').replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/$/,'').toLowerCase();return s+(cd&&txt.includes(cd)?1:0)},0)),backgroundColor:[`rgba(134,239,172,.6)`,`rgba(107,114,128,.6)`,`rgba(75,85,99,.6)`][i]||'rgba(55,65,81,.6)',borderRadius:4,borderSkipped:false}))]}  ,options:{plugins:{legend:{labels:{boxWidth:10,padding:8}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
+
+  // Breakdown
+  const bd=document.getElementById('comp-breakdown'); bd.innerHTML='';
+  compNames.forEach((name,i)=>{
+    const v=compVals[i]; const pct=cpcts[i];
+    const bar=i===0?'bg-brand-500':['bg-brand-300','bg-gray-500','bg-gray-600'][i-1]||'bg-gray-700';
+    bd.innerHTML+=`<div class="flex items-center gap-4"><span class="text-sm text-gray-300 w-40 flex-shrink-0">${name}</span><div class="flex-1 h-3 bg-gray-800 rounded-full overflow-hidden"><div class="h-full ${bar} rounded-full" style="width:${pct}%"></div></div><span class="text-sm font-semibold text-white w-12 text-right">${pct}%</span><span class="text-xs text-gray-500 w-20 text-right">${v} mention${v!==1?'s':''}</span></div>`;
+  });
+  if(compNames.length<=1) bd.innerHTML='<p class="text-xs text-gray-600 py-4">Add competitors in Settings to see comparison data.</p>';
+}
+
+// ══════════════════════════════════════════════
+// PAGE: REFERRAL TRAFFIC
+// ══════════════════════════════════════════════
+function traffic() {
+  const s=_stats;
+  const menC=s.mentionsOverTime?.map(d=>d.count)||[0];
+  const tl=timeLabels();
+
+  // Stats
+  const ts=document.getElementById('traffic-stats');
+  ts.innerHTML=[
+    {label:'Total AI Signals',val:s.totalMentions,sub:'Mention events tracked'},
+    {label:'Avg. Signals/Day',val:tl.length?(s.totalMentions/tl.length).toFixed(1):'—',sub:'Daily mention average'},
+    {label:'Peak Day Signals',val:Math.max(...menC,0),sub:'Highest single-day count'},
+    {label:'Active Platforms',val:s.engineCoverage?.filter(e=>e.runs>0).length||0,sub:'Platforms generating signals'},
+  ].map(st=>`<div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">${st.label}</p><p class="text-2xl font-bold text-white mt-1">${st.val}</p><p class="text-xs text-gray-500 mt-1">${st.sub}</p></div>`).join('');
+
+  const tlCtx=document.getElementById('traffic-line').getContext('2d');
+  mkChart('traffic-line',{type:'line',data:{labels:tl,datasets:[{label:'AI Signals',data:menC,borderColor:'#22c55e',borderWidth:2,backgroundColor:lineGrad(tlCtx,'rgba(34,197,94,.3)','rgba(34,197,94,0)'),fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#22c55e',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:6}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
+
+  const platMentions=PLATFORMS.map(p=>(_results||[]).reduce((s,r)=>s+(r.platformResults?.[p]?.mentioned?1:0),0));
+  const tpCtx=document.getElementById('traffic-platform-bar').getContext('2d');
+  mkChart('traffic-platform-bar',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:'Mention Signals',data:platMentions,backgroundColor:barGrad(tpCtx,'rgba(34,197,94,.9)','rgba(34,197,94,.4)'),borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
+}
+
+// ══════════════════════════════════════════════
+// PAGE: AI ENGINES
+// ══════════════════════════════════════════════
+function engines() {
+  const s=_stats;
+  const ec=s.engineCoverage||[];
+
+  // Cards
+  const ec2=document.getElementById('eng-cards'); ec2.innerHTML='';
+  ec.forEach(e=>{
+    const col=e.pct>=80?'text-brand-400':e.pct>=50?'text-yellow-400':'text-red-400';
+    const bg=e.pct>=80?'bg-brand-500/10':e.pct>=50?'bg-yellow-500/10':'bg-red-500/10';
+    const lbl=e.pct>=80?'High coverage':e.pct>=50?'Medium coverage':'Low coverage — opportunity!';
+    ec2.innerHTML+=`<div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><div class="flex items-center gap-2 mb-2"><span class="text-xl">${P_ICONS[e.platform]||'○'}</span><span class="text-sm font-semibold text-white">${P_LABELS[e.platform]}</span></div><p class="text-3xl font-bold ${col}">${e.runs>0?e.pct+'%':'—'}</p><div class="mt-2 inline-block text-[10px] font-medium px-2 py-0.5 rounded ${bg} ${col}">${e.runs>0?lbl:'No data yet'}</div><p class="text-xs text-gray-500 mt-2">${e.runs} poll run${e.runs!==1?'s':''}</p></div>`;
+  });
+
+  // Coverage bar
+  mkChart('eng-coverage-chart',{type:'bar',data:{labels:ec.map(e=>P_LABELS[e.platform]),datasets:[{label:'Mention Rate %',data:ec.map(e=>e.pct),backgroundColor:ec.map(e=>e.pct>=80?'rgba(34,197,94,.8)':e.pct>=50?'rgba(234,179,8,.8)':'rgba(239,68,68,.7)'),borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'},max:100,beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
+
+  // Position chart — avg position per platform
+  const positions=PLATFORMS.map(p=>{
+    const pos=(_results||[]).map(r=>r.platformResults?.[p]?.position).filter(Boolean);
+    return pos.length?(pos.reduce((a,b)=>a+b,0)/pos.length).toFixed(1):0;
+  });
+  mkChart('eng-position-chart',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:'Avg Position (lower=better)',data:positions,backgroundColor:'rgba(134,239,172,.7)',borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true,title:{display:true,text:'Position (1=first mention)'}}},responsive:true,maintainAspectRatio:false}});
+
+  // Prompt table
+  const pt=document.getElementById('eng-prompt-table');
+  const prompts=_config?.prompts||[];
+  if(!prompts.length){pt.innerHTML='<p class="text-xs text-gray-600">No prompts yet.</p>';return;}
+  pt.innerHTML=`<table class="w-full text-xs"><thead><tr class="border-b border-gray-800 text-gray-500 uppercase text-[10px]"><th class="py-2 text-left">Prompt</th>${PLATFORMS.map(p=>`<th class="py-2 px-3 text-center">${P_LABELS[p]}</th>`).join('')}</tr></thead><tbody class="divide-y divide-gray-800">${prompts.map(pmt=>{
+    const row=PLATFORMS.map(p=>{
+      const runs=(_results||[]).filter(r=>r.prompt===pmt);
+      const hit=runs.filter(r=>r.platformResults?.[p]?.mentioned).length;
+      const tot=runs.length;
+      if(!tot) return '<td class="py-2 px-3 text-center text-gray-600">—</td>';
+      const pct=Math.round(hit/tot*100);
+      const col=pct>=80?'text-brand-400':pct>=50?'text-yellow-400':'text-red-400';
+      return `<td class="py-2 px-3 text-center font-semibold ${col}">${pct}%</td>`;
+    }).join('');
+    return `<tr class="hover:bg-gray-800/40"><td class="py-2 text-gray-300 pr-4 max-w-xs"><span class="truncate block" title="${pmt}">${truncate(pmt,55)}</span></td>${row}</tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+// ══════════════════════════════════════════════
+// PAGE: OPPORTUNITIES
+// ══════════════════════════════════════════════
+function opportunities() {
+  const prompts=_config?.prompts||[];
+  const ps=_stats?.promptStats||[];
+
+  // Gaps — prompts with 0% mention rate
+  const gaps=ps.filter(p=>p.pct===0);
+  const gapEl=document.getElementById('opp-gaps'); gapEl.innerHTML='';
+  if(!gaps.length) { gapEl.innerHTML='<p class="text-xs text-brand-400">🎉 No complete gaps — you appear in every tracked prompt at least once!</p>'; }
+  else gaps.forEach(p=>{
+    gapEl.innerHTML+=`<div class="flex items-start gap-3 p-3 bg-red-500/5 border border-red-500/20 rounded-lg"><svg class="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg><div class="flex-1 min-w-0"><p class="text-xs font-medium text-white truncate">${p.prompt}</p><p class="text-[10px] text-gray-500 mt-0.5">0% mention rate — ${p.runs} poll${p.runs!==1?'s':''} run</p></div></div>`;
+  });
+
+  // Underperforming — 1–49%
+  const under=ps.filter(p=>p.pct>0&&p.pct<50);
+  const undEl=document.getElementById('opp-underperform'); undEl.innerHTML='';
+  if(!under.length) { undEl.innerHTML='<p class="text-xs text-gray-500">No underperforming prompts yet. Run more polls to build data.</p>'; }
+  else under.forEach(p=>{
+    const col=p.pct>=30?'text-yellow-400':'text-red-400';
+    undEl.innerHTML+=`<div class="flex items-center gap-3 p-3 bg-gray-800/50 border border-gray-700 rounded-lg"><div class="flex-1 min-w-0"><p class="text-xs text-white truncate">${truncate(p.prompt,50)}</p><div class="mt-1.5 h-1.5 bg-gray-700 rounded-full overflow-hidden"><div class="h-full rounded-full bg-yellow-500" style="width:${p.pct}%"></div></div></div><span class="text-sm font-bold ${col} flex-shrink-0">${p.pct}%</span></div>`;
+  });
+
+  // Suggested prompts
+  const industry=_config?.brand?.industry||'seo';
+  const brand=_config?.brand?.name||'Your Brand';
+  const suggestions={
+    seo:['Who are the best SEO agencies near Boston?','What SEO agency should I use for AI search?','Best agency for Google AI Overviews optimization','Top AEO agencies in the United States','Who specializes in answer engine optimization?','Best agency for improving AI citation tracking','What companies offer AI visibility services?','Top rated SEO consultants for enterprise brands'],
+    saas:['Best SaaS tools for digital marketing','Top B2B software platforms for SEO','What software helps with AI search visibility?','Best analytics tools for tracking AI mentions'],
+    other:['Best digital marketing agencies in my industry','Who offers AI search optimization services?','Top brands in content marketing and SEO'],
+  };
+  const sugg=(suggestions[industry]||suggestions.other).filter(s=>!prompts.includes(s));
+  const sgEl=document.getElementById('opp-suggested'); sgEl.innerHTML='';
+  sugg.slice(0,8).forEach(s=>{
+    sgEl.innerHTML+=`<div class="flex items-center justify-between p-3 bg-gray-900 border border-gray-800 rounded-lg hover:border-brand-500/50 transition-colors"><p class="text-xs text-gray-300 flex-1 mr-3">${s}</p><button onclick="addPromptFromOpp('${s.replace(/'/g,"\\'")}',this)" class="text-xs text-brand-400 hover:text-brand-300 font-medium flex-shrink-0">+ Add</button></div>`;
+  });
+  if(!sugg.length) sgEl.innerHTML='<p class="text-xs text-gray-500 col-span-2">All suggested prompts already added!</p>';
+}
+
+async function addPromptFromOpp(prompt, btn) {
+  if(!_config) return;
+  if(_config.prompts.includes(prompt)) { btn.textContent='Already added'; return; }
+  if(_config.prompts.length>=20) { btn.textContent='Max reached'; return; }
+  _config.prompts.push(prompt);
+  await fetch('/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_config)});
+  btn.textContent='✓ Added'; btn.disabled=true;
+  btn.className='text-xs text-brand-400 font-medium flex-shrink-0 opacity-50';
+}
+
+async function addAllSuggested() {
+  document.querySelectorAll('#opp-suggested button:not([disabled])').forEach(btn=>btn.click());
+}
+
+// ══════════════════════════════════════════════
+// PAGE: CONTENT
+// ══════════════════════════════════════════════
+function content() {
+  const urlMap={};
+  (_results||[]).forEach(r=>{
+    PLATFORMS.forEach(p=>{
+      const pr=r.platformResults?.[p]; if(!pr) return;
+      (pr.citedBrandURLs||[]).forEach(u=>{
+        if(!urlMap[u]) urlMap[u]={url:u,total:0,platforms:new Set(),firstSeen:r.timestamp,lastSeen:r.timestamp};
+        urlMap[u].total++; urlMap[u].platforms.add(P_LABELS[p]);
+        if(r.timestamp<urlMap[u].firstSeen) urlMap[u].firstSeen=r.timestamp;
+        if(r.timestamp>urlMap[u].lastSeen)  urlMap[u].lastSeen=r.timestamp;
+      });
+    });
+  });
+  const list=Object.values(urlMap).sort((a,b)=>b.total-a.total);
+  document.getElementById('content-count').textContent=list.length+' pages cited';
+
+  const cs=document.getElementById('content-stats');
+  cs.innerHTML=[
+    {label:'Total Cited Pages',val:list.length,sub:'Unique URLs cited by AI'},
+    {label:'Most Cited Page',val:list[0]?.url?.replace(/^https?:\/\//,'').slice(0,30)||'—',sub:'Highest citation count'},
+    {label:'Total Citations',val:list.reduce((s,u)=>s+u.total,0),sub:'Across all pages'},
+  ].map(s=>`<div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">${s.label}</p><p class="text-xl font-bold text-white mt-1 truncate">${s.val}</p><p class="text-xs text-gray-500 mt-1">${s.sub}</p></div>`).join('');
+
+  const tb=document.getElementById('content-table'); tb.innerHTML='';
+  if(!list.length){tb.innerHTML='<tr><td colspan="6" class="px-5 py-8 text-center text-gray-600">No cited pages yet — run a poll first.</td></tr>';return;}
+  list.forEach(u=>{
+    const sh=u.url.replace(/^https?:\/\//,'').replace(/^www\./,'');
+    const status=u.total>=5?'<span class="badge-high px-2 py-0.5 rounded text-[10px] font-semibold">Strong</span>':u.total>=2?'<span class="badge-med px-2 py-0.5 rounded text-[10px] font-semibold">Growing</span>':'<span class="badge-none px-2 py-0.5 rounded text-[10px] font-semibold">New</span>';
+    tb.innerHTML+=`<tr class="hover:bg-gray-800/40">
+      <td class="px-5 py-3"><a href="${u.url}" target="_blank" class="text-brand-400 hover:text-brand-300 truncate block max-w-xs" title="${u.url}">${sh}</a></td>
+      <td class="px-5 py-3 font-semibold text-white">${u.total}</td>
+      <td class="px-5 py-3 text-gray-400">${[...u.platforms].join(', ')}</td>
+      <td class="px-5 py-3 text-gray-500 text-[11px]">${fmtDate(u.firstSeen)}</td>
+      <td class="px-5 py-3 text-gray-500 text-[11px]">${fmtDate(u.lastSeen)}</td>
+      <td class="px-5 py-3">${status}</td>
+    </tr>`;
+  });
+}
+
+// ══════════════════════════════════════════════
+// PAGE: SETTINGS
+// ══════════════════════════════════════════════
+function settingsInit() {
+  if(!_config) return;
+  const b=_config.brand||{};
+  document.getElementById('set-brand-name').value   = b.name||'';
+  document.getElementById('set-brand-domain').value = b.domain||'';
+  document.getElementById('set-brand-industry').value = b.industry||'seo';
+  const comps=_config.competitors||[];
+  [0,1,2].forEach(i=>{
+    const d=document.getElementById(`set-comp${i+1}-domain`);
+    const n=document.getElementById(`set-comp${i+1}-name`);
+    if(d) d.value=comps[i]?.domain||'';
+    if(n) n.value=comps[i]?.name||'';
+  });
+  renderSettingsPrompts();
+  document.getElementById('set-prompt-input').addEventListener('keydown',e=>{ if(e.key==='Enter') settingsAddPrompt(); });
+}
+
+function renderSettingsPrompts() {
+  const pl=document.getElementById('set-prompts-list'); pl.innerHTML='';
+  const prompts=_config?.prompts||[];
+  document.getElementById('set-prompt-count').textContent=prompts.length+' / 20';
+  prompts.forEach((p,i)=>{
+    pl.innerHTML+=`<div class="flex items-center justify-between bg-gray-800 rounded-lg px-3 py-2"><span class="text-xs text-gray-300 truncate flex-1 mr-2">${p}</span><button onclick="settingsRemovePrompt(${i})" class="text-gray-600 hover:text-red-400 flex-shrink-0"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>`;
+  });
+  if(!prompts.length) pl.innerHTML='<p class="text-xs text-gray-600 py-2 text-center">No prompts yet.</p>';
+}
+
+function settingsAddPrompt() {
+  const inp=document.getElementById('set-prompt-input');
+  const txt=inp.value.trim();
+  if(!txt||!_config) return;
+  if(!_config.prompts) _config.prompts=[];
+  if(_config.prompts.length>=20||_config.prompts.includes(txt)) { inp.value=''; return; }
+  _config.prompts.push(txt);
+  inp.value='';
+  renderSettingsPrompts();
+}
+
+function settingsRemovePrompt(i) {
+  if(!_config) return;
+  _config.prompts.splice(i,1);
+  renderSettingsPrompts();
+}
+
+async function saveSettings() {
+  if(!_config) return;
+  _config.brand.name     = document.getElementById('set-brand-name').value.trim();
+  _config.brand.domain   = document.getElementById('set-brand-domain').value.trim().replace(/^https?:\/\//,'');
+  _config.brand.industry = document.getElementById('set-brand-industry').value;
+  _config.competitors = [0,1,2].map(i=>({
+    domain: document.getElementById(`set-comp${i+1}-domain`).value.trim(),
+    name:   document.getElementById(`set-comp${i+1}-name`).value.trim()||`Competitor ${i+1}`,
+  })).filter(c=>c.domain);
+  await fetch('/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_config)});
+  document.getElementById('settings-saved').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('settings-saved').classList.add('hidden'),4000);
+}
+
+// ══════════════════════════════════════════════
+// POLL TRIGGER
+// ══════════════════════════════════════════════
+let pollInterval=null;
+async function triggerPoll() {
+  const btn=document.getElementById('run-poll-btn');
+  btn.disabled=true; btn.innerHTML='<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Polling…';
+  await fetch('/api/poll',{method:'POST'});
+  pollInterval=setInterval(async()=>{
+    const st=await fetch('/api/poll/status').then(r=>r.json());
+    if(!st.running){
+      clearInterval(pollInterval);
+      btn.disabled=false; btn.innerHTML='<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg> Run Poll';
+      _stats=null; _results=null; await loadData(); renderPage(document.querySelector('.page.active')?.id?.replace('page-',''));
+    }
+  },5000);
+}
+
+// ══════════════════════════════════════════════
+// EXPORT (print-based PDF)
+// ══════════════════════════════════════════════
+function exportReport() { window.print(); }
+
+// ══════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════
+loadData().then(()=>{ if(_stats?.ready) overview(); });
+</script>
 </body>
 </html>
