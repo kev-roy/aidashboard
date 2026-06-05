@@ -178,38 +178,38 @@ async function listGA4Properties() {
 // BING WEBMASTER TOOLS
 // ══════════════════════════════════════════════════════════════════
 
+// Bing WMT API requires POST with JSON body (not GET)
+async function bingPost(endpoint, apiKey, body = {}) {
+  const url = `https://ssl.bing.com/webmaster/api.svc/json/${endpoint}`;
+  const res  = await fetch(url, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Accept': 'application/json' },
+    body:    JSON.stringify({ apikey: apiKey, ...body }),
+  });
+  const text = await res.text();
+  if (text.trim().startsWith('<')) throw new Error('Bing API returned HTML — check your API key');
+  const data = JSON.parse(text);
+  if (data.ErrorCode) throw new Error(data.Message || `Bing error code ${data.ErrorCode}`);
+  return data.d || data;
+}
+
 async function fetchBingAIPrompts(apiKey, siteUrl, days = 30) {
   const endDate   = new Date();
   const startDate = new Date();
   startDate.setDate(endDate.getDate() - days);
-
   const fmt = d => d.toISOString().split('T')[0];
 
-  // Bing WMT API — Keyword Stats (includes AI prompts in newer response types)
-  const url = `https://ssl.bing.com/webmaster/api.svc/json/GetKeywordStats` +
-    `?apikey=${apiKey}` +
-    `&siteUrl=${encodeURIComponent(siteUrl)}` +
-    `&startDate=${fmt(startDate)}` +
-    `&endDate=${fmt(endDate)}`;
+  const body = {
+    siteUrl,
+    startDate: fmt(startDate),
+    endDate:   fmt(endDate),
+  };
 
-  const res  = await fetch(url, { headers: { 'Accept': 'application/json' } });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`Bing API error: ${JSON.stringify(data).slice(0, 200)}`);
-
-  const keywords = data.d || [];
-
-  // Bing AI Prompts — separate endpoint (QueryStats with AI filter)
+  // Query stats (search queries / AI prompts)
   let aiPrompts = [];
   try {
-    const aiUrl = `https://ssl.bing.com/webmaster/api.svc/json/GetQueryStats` +
-      `?apikey=${apiKey}` +
-      `&siteUrl=${encodeURIComponent(siteUrl)}` +
-      `&startDate=${fmt(startDate)}` +
-      `&endDate=${fmt(endDate)}`;
-
-    const aiRes  = await fetch(aiUrl, { headers: { 'Accept': 'application/json' } });
-    const aiData = await aiRes.json();
-    aiPrompts = (aiData.d || []).map(q => ({
+    const data = await bingPost('GetQueryStats', apiKey, body);
+    aiPrompts = (Array.isArray(data) ? data : []).map(q => ({
       query:       q.Query,
       impressions: q.Impressions || 0,
       clicks:      q.Clicks      || 0,
@@ -223,15 +223,8 @@ async function fetchBingAIPrompts(apiKey, siteUrl, days = 30) {
   // Page stats
   let pageStats = [];
   try {
-    const pageUrl = `https://ssl.bing.com/webmaster/api.svc/json/GetPageStats` +
-      `?apikey=${apiKey}` +
-      `&siteUrl=${encodeURIComponent(siteUrl)}` +
-      `&startDate=${fmt(startDate)}` +
-      `&endDate=${fmt(endDate)}`;
-
-    const pageRes  = await fetch(pageUrl, { headers: { 'Accept': 'application/json' } });
-    const pageData = await pageRes.json();
-    pageStats = (pageData.d || []).map(p => ({
+    const data = await bingPost('GetPageStats', apiKey, body);
+    pageStats = (Array.isArray(data) ? data : []).map(p => ({
       url:         p.Url,
       impressions: p.Impressions || 0,
       clicks:      p.Clicks      || 0,
@@ -242,7 +235,6 @@ async function fetchBingAIPrompts(apiKey, siteUrl, days = 30) {
   }
 
   return {
-    keywords:    keywords.slice(0, 100),
     aiPrompts:   aiPrompts.slice(0, 50),
     pageStats,
     fetchedAt:   new Date().toISOString(),
@@ -251,13 +243,11 @@ async function fetchBingAIPrompts(apiKey, siteUrl, days = 30) {
 
 // ── Validate Bing API key ──────────────────────────────────────────────────────
 async function validateBingKey(apiKey, siteUrl) {
-  const url = `https://ssl.bing.com/webmaster/api.svc/json/GetSites?apikey=${apiKey}`;
-  const res  = await fetch(url, { headers: { 'Accept': 'application/json' } });
-  const data = await res.json();
-  if (!res.ok || data.ErrorCode) throw new Error(data.Message || 'Invalid API key');
-  const sites = data.d || [];
-  const match = sites.find(s => s.Url?.includes(siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')));
-  return { valid: true, sites, siteFound: !!match };
+  // Bing WMT API requires POST, not GET
+  const sites = await bingPost('GetSites', apiKey);
+  const domain = siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const match  = (Array.isArray(sites) ? sites : []).find(s => s.Url?.includes(domain));
+  return { valid: true, sites: Array.isArray(sites) ? sites : [], siteFound: !!match };
 }
 
 module.exports = {
