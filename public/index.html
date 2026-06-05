@@ -91,7 +91,7 @@
 </aside>
 
 <!-- ══════════════════════════════ MAIN ══════════════════════════════ -->
-<main class="flex-1 flex flex-col min-h-screen overflow-auto">
+<main class="flex-1 flex flex-col h-screen overflow-y-auto">
 
   <!-- Top bar -->
   <header class="sticky top-0 z-10 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-8 py-3 flex items-center justify-between">
@@ -125,8 +125,8 @@
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400 font-medium">Avg. AI Position</p><p class="text-2xl font-bold text-white mt-1" id="stat-avg-pos">—</p><canvas id="spark5" width="80" height="30" class="mt-2"></canvas></div>
     </div>
     <div class="grid grid-cols-3 gap-4">
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">AI Citations Over Time</h3></div><canvas id="citationsChart" height="150"></canvas></div>
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">Brand Mentions Over Time</h3></div><canvas id="mentionsChart" height="150"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">AI Citations Over Time</h3></div><div class="h-40"><canvas id="citationsChart"></canvas></div></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">Brand Mentions Over Time</h3></div><div class="h-40"><canvas id="mentionsChart"></canvas></div></div>
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">Cited URLs</h3><a onclick="navigate('urls')" class="text-xs text-brand-400 hover:text-brand-300 cursor-pointer">View all →</a></div><div id="ov-cited-urls"></div></div>
     </div>
     <div class="grid grid-cols-3 gap-4">
@@ -137,7 +137,7 @@
           <div class="space-y-1.5 flex-1 text-xs" id="donut-legend"></div>
         </div>
       </div>
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">AI Referral Signals</h3></div><canvas id="trafficChart" height="150"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-white">AI Referral Signals</h3></div><div class="h-40"><canvas id="trafficChart"></canvas></div></div>
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
         <h3 class="text-sm font-semibold text-white mb-4">AI Engine Coverage</h3>
         <div class="grid grid-cols-4 gap-2 mb-3" id="engine-grid"></div>
@@ -196,7 +196,7 @@
   <div id="page-mentions" class="page p-8">
     <div class="grid grid-cols-4 gap-4 mb-6" id="men-stats"></div>
     <div class="grid grid-cols-2 gap-4 mb-6">
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Mentions by Platform</h3><canvas id="men-platform-chart" height="180"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Mentions by Platform</h3><div class="h-52"><canvas id="men-platform-chart"></canvas></div></div>
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Mention Rate by Prompt</h3><div id="men-prompt-rates" class="space-y-2.5"></div></div>
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
@@ -215,8 +215,8 @@
   <!-- ════════════ PAGE: CITED URLS ════════════ -->
   <div id="page-urls" class="page p-8">
     <div class="grid grid-cols-3 gap-4 mb-6">
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 col-span-2"><h3 class="text-sm font-semibold text-white mb-4">Top Cited Pages</h3><canvas id="url-bar-chart" height="200"></canvas></div>
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Citations by Platform</h3><canvas id="url-donut-chart" height="200"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 col-span-2"><h3 class="text-sm font-semibold text-white mb-4">Top Cited Pages</h3><div class="h-52"><canvas id="url-bar-chart"></canvas></div></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Citations by Platform</h3><div class="h-52"><canvas id="url-donut-chart"></canvas></div></div>
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
       <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
@@ -244,7 +244,7 @@
           <div class="space-y-2 flex-1 text-xs" id="comp-legend"></div>
         </div>
       </div>
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Head-to-Head by Platform</h3><canvas id="comp-bar-chart" height="180"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Head-to-Head by Platform</h3><div class="h-52"><canvas id="comp-bar-chart"></canvas></div></div>
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
       <h3 class="text-sm font-semibold text-white mb-4">Competitor Mention Breakdown</h3>
@@ -260,8 +260,8 @@
     </div>
     <div class="grid grid-cols-4 gap-4 mb-6" id="traffic-stats"></div>
     <div class="grid grid-cols-2 gap-4">
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">AI Mention Signals Over Time</h3><canvas id="traffic-line" height="200"></canvas></div>
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Signal Volume by Platform</h3><canvas id="traffic-platform-bar" height="200"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">AI Mention Signals Over Time</h3><div class="h-52"><canvas id="traffic-line"></canvas></div></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Signal Volume by Platform</h3><div class="h-52"><canvas id="traffic-platform-bar"></canvas></div></div>
     </div>
   </div>
 
@@ -269,8 +269,8 @@
   <div id="page-engines" class="page p-8">
     <div class="grid grid-cols-4 gap-4 mb-6" id="eng-cards"></div>
     <div class="grid grid-cols-2 gap-4 mb-6">
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Coverage Rate by Engine</h3><canvas id="eng-coverage-chart" height="200"></canvas></div>
-      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Avg. Position by Engine</h3><canvas id="eng-position-chart" height="200"></canvas></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Coverage Rate by Engine</h3><div class="h-52"><canvas id="eng-coverage-chart"></canvas></div></div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-5"><h3 class="text-sm font-semibold text-white mb-4">Avg. Position by Engine</h3><div class="h-52"><canvas id="eng-position-chart"></canvas></div></div>
     </div>
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
       <h3 class="text-sm font-semibold text-white mb-4">Per-Engine Prompt Performance</h3>
@@ -440,9 +440,11 @@ const P_LABELS  = { chatgpt:'ChatGPT', claude:'Claude', perplexity:'Perplexity',
 const P_ICONS   = { chatgpt:'💬', claude:'✳', perplexity:'⬡', google_aio:'⊕' };
 const P_COLORS  = ['#22c55e','#86efac','#6b7280','#4b5563'];
 
-Chart.defaults.font.family = '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
-Chart.defaults.font.size   = 11;
-Chart.defaults.color       = '#9ca3af';
+Chart.defaults.font.family          = '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
+Chart.defaults.font.size            = 11;
+Chart.defaults.color                = '#9ca3af';
+Chart.defaults.responsive           = true;
+Chart.defaults.maintainAspectRatio  = false;
 
 // ══════════════════════════════════════════════
 // ROUTER
@@ -551,10 +553,10 @@ function overview() {
 
   const tl = timeLabels();
   const citCtx=document.getElementById('citationsChart').getContext('2d');
-  mkChart('citationsChart',{type:'line',data:{labels:tl,datasets:[{data:citC,borderColor:'#22c55e',borderWidth:2,backgroundColor:lineGrad(citCtx,'rgba(34,197,94,.3)','rgba(34,197,94,0)'),fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#22c55e',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:true}});
+  mkChart('citationsChart',{type:'line',data:{labels:tl,datasets:[{data:citC,borderColor:'#22c55e',borderWidth:2,backgroundColor:lineGrad(citCtx,'rgba(34,197,94,.3)','rgba(34,197,94,0)'),fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#22c55e',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}}}});
 
   const menCtx=document.getElementById('mentionsChart').getContext('2d');
-  mkChart('mentionsChart',{type:'line',data:{labels:tl,datasets:[{data:menC,borderColor:'#86efac',borderWidth:2,backgroundColor:lineGrad(menCtx,'rgba(134,239,172,.25)','rgba(134,239,172,0)'),fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#86efac',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:true}});
+  mkChart('mentionsChart',{type:'line',data:{labels:tl,datasets:[{data:menC,borderColor:'#86efac',borderWidth:2,backgroundColor:lineGrad(menCtx,'rgba(134,239,172,.25)','rgba(134,239,172,0)'),fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#86efac',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}}}});
 
   // Cited URLs mini
   const urlEl=document.getElementById('ov-cited-urls'); urlEl.innerHTML='';
@@ -578,13 +580,13 @@ function overview() {
   const tot=compVals.reduce((a,b)=>a+b,0)||1;
   const cpcts=compVals.map(v=>+((v/tot)*100).toFixed(1));
   document.getElementById('brand-share-pct').textContent=cpcts[0]+'%';
-  mkChart('donutChart',{type:'doughnut',data:{labels:compNames,datasets:[{data:cpcts,backgroundColor:P_COLORS,borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}%`}}},responsive:true,maintainAspectRatio:true}});
+  mkChart('donutChart',{type:'doughnut',data:{labels:compNames,datasets:[{data:cpcts,backgroundColor:P_COLORS,borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}%`}}}}});
   const dl=document.getElementById('donut-legend'); dl.innerHTML='';
   compNames.forEach((n,i)=>{ dl.innerHTML+=`<div class="flex items-center justify-between"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${P_COLORS[i]||'#374151'}"></span><span class="text-gray-300">${n}</span></div><span class="font-semibold text-white ml-4">${cpcts[i]}%</span></div>`; });
 
   // Traffic bar
   const trafCtx=document.getElementById('trafficChart').getContext('2d');
-  mkChart('trafficChart',{type:'bar',data:{labels:tl,datasets:[{data:menC,backgroundColor:barGrad(trafCtx,'rgba(34,197,94,.9)','rgba(34,197,94,.4)'),borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:5}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:true}});
+  mkChart('trafficChart',{type:'bar',data:{labels:tl,datasets:[{data:menC,backgroundColor:barGrad(trafCtx,'rgba(34,197,94,.9)','rgba(34,197,94,.4)'),borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:5}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}}}});
 
   // Sentiment
   const sp=s.sentimentPcts||{positive:0,neutral:0,negative:0};
@@ -670,7 +672,7 @@ function mentions() {
   const platMentions=PLATFORMS.map(p=>mentioned.filter(r=>r.platform===p).length);
   const platTotal=PLATFORMS.map(p=>rows.filter(r=>r.platform===p).length);
   const platPct=PLATFORMS.map((p,i)=>platTotal[i]?Math.round(platMentions[i]/platTotal[i]*100):0);
-  mkChart('men-platform-chart',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:'Mention Rate %',data:platPct,backgroundColor:['rgba(34,197,94,.8)','rgba(134,239,172,.8)','rgba(107,114,128,.8)','rgba(75,85,99,.8)'],borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'},max:100,beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
+  mkChart('men-platform-chart',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:'Mention Rate %',data:platPct,backgroundColor:['rgba(34,197,94,.8)','rgba(134,239,172,.8)','rgba(107,114,128,.8)','rgba(75,85,99,.8)'],borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'},max:100,beginAtZero:true}}}});
 
   // Prompt rates
   const pr=document.getElementById('men-prompt-rates'); pr.innerHTML='';
@@ -717,11 +719,11 @@ function urls() {
 
   // Bar chart
   const top8=urlList.slice(0,8);
-  mkChart('url-bar-chart',{type:'bar',data:{labels:top8.map(u=>u.url.replace(/^https?:\/\//,'').slice(0,40)),datasets:[{label:'Citations',data:top8.map(u=>u.total),backgroundColor:'rgba(34,197,94,.8)',borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true},y:{grid:{display:false},ticks:{font:{size:10}}}},responsive:true,maintainAspectRatio:false}});
+  mkChart('url-bar-chart',{type:'bar',data:{labels:top8.map(u=>u.url.replace(/^https?:\/\//,'').slice(0,40)),datasets:[{label:'Citations',data:top8.map(u=>u.total),backgroundColor:'rgba(34,197,94,.8)',borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
 
   // Platform donut
   const platTotals=PLATFORMS.map(p=>urlList.reduce((s,u)=>s+(u.byPlatform[p]||0),0));
-  mkChart('url-donut-chart',{type:'doughnut',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{data:platTotals,backgroundColor:P_COLORS,borderWidth:0,hoverOffset:4}]},options:{cutout:'65%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}`}}},responsive:true,maintainAspectRatio:false}});
+  mkChart('url-donut-chart',{type:'doughnut',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{data:platTotals,backgroundColor:P_COLORS,borderWidth:0,hoverOffset:4}]},options:{cutout:'65%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8}},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}`}}}}});
 
   // Table
   const tb=document.getElementById('url-table'); tb.innerHTML='';
@@ -747,14 +749,14 @@ function competitors() {
   const cpcts=compVals.map(v=>+((v/tot)*100).toFixed(1));
   document.getElementById('comp-brand-pct').textContent=cpcts[0]+'%';
 
-  mkChart('comp-donut',{type:'doughnut',data:{labels:compNames,datasets:[{data:cpcts,backgroundColor:P_COLORS,borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}%`}}},responsive:true,maintainAspectRatio:true}});
+  mkChart('comp-donut',{type:'doughnut',data:{labels:compNames,datasets:[{data:cpcts,backgroundColor:P_COLORS,borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw}%`}}}}});
 
   const cl=document.getElementById('comp-legend'); cl.innerHTML='';
   compNames.forEach((n,i)=>{ cl.innerHTML+=`<div class="flex items-center justify-between text-xs"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:${P_COLORS[i]||'#374151'}"></span><span class="text-gray-300">${n}</span></div><span class="font-semibold text-white ml-4">${cpcts[i]}%</span></div>`; });
 
   // H2H by platform
   const yourCounts  = PLATFORMS.map(p=>(_results||[]).reduce((s,r)=>s+(r.platformResults?.[p]?.mentioned?1:0),0));
-  mkChart('comp-bar-chart',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:c?.brand?.name||'Your Brand',data:yourCounts,backgroundColor:'rgba(34,197,94,.8)',borderRadius:4,borderSkipped:false},...compNames.slice(1).map((n,i)=>({label:n,data:PLATFORMS.map(p=>(_results||[]).reduce((s,r)=>{const txt=(r.platformResults?.[p]?.response||'').toLowerCase();const cd=(c?.competitors?.[i]?.domain||'').replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/$/,'').toLowerCase();return s+(cd&&txt.includes(cd)?1:0)},0)),backgroundColor:[`rgba(134,239,172,.6)`,`rgba(107,114,128,.6)`,`rgba(75,85,99,.6)`][i]||'rgba(55,65,81,.6)',borderRadius:4,borderSkipped:false}))]}  ,options:{plugins:{legend:{labels:{boxWidth:10,padding:8}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
+  mkChart('comp-bar-chart',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:c?.brand?.name||'Your Brand',data:yourCounts,backgroundColor:'rgba(34,197,94,.8)',borderRadius:4,borderSkipped:false},...compNames.slice(1).map((n,i)=>({label:n,data:PLATFORMS.map(p=>(_results||[]).reduce((s,r)=>{const txt=(r.platformResults?.[p]?.response||'').toLowerCase();const cd=(c?.competitors?.[i]?.domain||'').replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/\/$/,'').toLowerCase();return s+(cd&&txt.includes(cd)?1:0)},0)),backgroundColor:[`rgba(134,239,172,.6)`,`rgba(107,114,128,.6)`,`rgba(75,85,99,.6)`][i]||'rgba(55,65,81,.6)',borderRadius:4,borderSkipped:false}))]}  ,options:{plugins:{legend:{labels:{boxWidth:10,padding:8}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}}}});
 
   // Breakdown
   const bd=document.getElementById('comp-breakdown'); bd.innerHTML='';
@@ -784,11 +786,11 @@ function traffic() {
   ].map(st=>`<div class="bg-gray-900 border border-gray-800 rounded-xl p-4"><p class="text-xs text-gray-400">${st.label}</p><p class="text-2xl font-bold text-white mt-1">${st.val}</p><p class="text-xs text-gray-500 mt-1">${st.sub}</p></div>`).join('');
 
   const tlCtx=document.getElementById('traffic-line').getContext('2d');
-  mkChart('traffic-line',{type:'line',data:{labels:tl,datasets:[{label:'AI Signals',data:menC,borderColor:'#22c55e',borderWidth:2,backgroundColor:lineGrad(tlCtx,'rgba(34,197,94,.3)','rgba(34,197,94,0)'),fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#22c55e',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:6}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
+  mkChart('traffic-line',{type:'line',data:{labels:tl,datasets:[{label:'AI Signals',data:menC,borderColor:'#22c55e',borderWidth:2,backgroundColor:lineGrad(tlCtx,'rgba(34,197,94,.3)','rgba(34,197,94,0)'),fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#22c55e',pointBorderColor:'#111827',pointBorderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:6}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}}}});
 
   const platMentions=PLATFORMS.map(p=>(_results||[]).reduce((s,r)=>s+(r.platformResults?.[p]?.mentioned?1:0),0));
   const tpCtx=document.getElementById('traffic-platform-bar').getContext('2d');
-  mkChart('traffic-platform-bar',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:'Mention Signals',data:platMentions,backgroundColor:barGrad(tpCtx,'rgba(34,197,94,.9)','rgba(34,197,94,.4)'),borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
+  mkChart('traffic-platform-bar',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:'Mention Signals',data:platMentions,backgroundColor:barGrad(tpCtx,'rgba(34,197,94,.9)','rgba(34,197,94,.4)'),borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true}}}});
 }
 
 // ══════════════════════════════════════════════
@@ -808,14 +810,14 @@ function engines() {
   });
 
   // Coverage bar
-  mkChart('eng-coverage-chart',{type:'bar',data:{labels:ec.map(e=>P_LABELS[e.platform]),datasets:[{label:'Mention Rate %',data:ec.map(e=>e.pct),backgroundColor:ec.map(e=>e.pct>=80?'rgba(34,197,94,.8)':e.pct>=50?'rgba(234,179,8,.8)':'rgba(239,68,68,.7)'),borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'},max:100,beginAtZero:true}},responsive:true,maintainAspectRatio:false}});
+  mkChart('eng-coverage-chart',{type:'bar',data:{labels:ec.map(e=>P_LABELS[e.platform]),datasets:[{label:'Mention Rate %',data:ec.map(e=>e.pct),backgroundColor:ec.map(e=>e.pct>=80?'rgba(34,197,94,.8)':e.pct>=50?'rgba(234,179,8,.8)':'rgba(239,68,68,.7)'),borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{callback:v=>v+'%'},max:100,beginAtZero:true}}}});
 
   // Position chart — avg position per platform
   const positions=PLATFORMS.map(p=>{
     const pos=(_results||[]).map(r=>r.platformResults?.[p]?.position).filter(Boolean);
     return pos.length?(pos.reduce((a,b)=>a+b,0)/pos.length).toFixed(1):0;
   });
-  mkChart('eng-position-chart',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:'Avg Position (lower=better)',data:positions,backgroundColor:'rgba(134,239,172,.7)',borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true,title:{display:true,text:'Position (1=first mention)'}}},responsive:true,maintainAspectRatio:false}});
+  mkChart('eng-position-chart',{type:'bar',data:{labels:PLATFORMS.map(p=>P_LABELS[p]),datasets:[{label:'Avg Position (lower=better)',data:positions,backgroundColor:'rgba(134,239,172,.7)',borderRadius:6,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{maxTicksLimit:5},beginAtZero:true,title:{display:true,text:'Position (1=first mention)'}}}}});
 
   // Prompt table
   const pt=document.getElementById('eng-prompt-table');
