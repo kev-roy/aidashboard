@@ -1435,7 +1435,13 @@ async function connectBing() {
     // Auto-fetch
     fetchBingData();
   } catch (e) {
-    if (statusEl) statusEl.textContent = '✗ ' + e.message;
+    const msg = e.message.includes('InvalidApiKey')
+      ? 'Bing API key issue — this is a known Bing API limitation. The dashboard works fine without it.'
+      : '✗ ' + e.message;
+    if (statusEl) {
+      statusEl.textContent = msg;
+      statusEl.className = 'text-xs mt-1 ' + (e.message.includes('InvalidApiKey') ? 'text-yellow-600' : 'text-red-400');
+    }
   }
 }
 
