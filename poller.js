@@ -112,6 +112,18 @@ function analyzeResponse(text, brandName, brandDomain, competitors = []) {
   return { mentioned, position, urls, citedBrandURLs, competitorMentions, sentiment };
 }
 
+// ── Timeout wrapper ───────────────────────────────────────────────────────────
+const PLATFORM_TIMEOUT_MS = 45000; // 45s per platform call
+
+function withTimeout(promise, ms = PLATFORM_TIMEOUT_MS, label = '') {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms/1000}s${label ? ' — ' + label : ''}`)), ms)
+    ),
+  ]);
+}
+
 // ── Platform runners ──────────────────────────────────────────────────────────
 
 async function runChatGPT(prompt) {
@@ -303,16 +315,16 @@ async function runPrompt(prompt, config) {
       try {
         let text, extra = {};
         if (p.key === 'google_aio') {
-          const result = await p.fn();
+          const result = await withTimeout(p.fn(), 30000, 'SerpApi');
           text = result.text;
           extra = { organicURLs: result.organicURLs, citedSources: result.citedSources, hasAIO: result.hasAIO };
         } else if (p.key === 'chatgpt' || p.key === 'claude') {
           // Both now return { text, citedURLs } from web search APIs
-          const result = await p.fn();
+          const result = await withTimeout(p.fn(), 60000, p.label);
           text = result.text;
           extra = { citedURLs: result.citedURLs || [] };
         } else {
-          text = await p.fn();
+          text = await withTimeout(p.fn(), 45000, p.label);
         }
         const analysis = analyzeResponse(text, brand.name, brand.domain, competitors);
         runResults.push({ response: text.slice(0, 2000), ...analysis, ...extra });
