@@ -32,7 +32,10 @@ function loadResults() {
 
 function saveResults(results) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
+  // Write to a temp file first, then rename — prevents corruption if interrupted mid-write
+  const tmp = RESULTS_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(results, null, 2));
+  fs.renameSync(tmp, RESULTS_FILE);
 }
 
 /**

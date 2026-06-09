@@ -41,17 +41,25 @@ app.get('/api/config', (req, res) => {
 
 // ── Results ───────────────────────────────────────────────────────────────────
 
+function safeReadResults() {
+  if (!fs.existsSync(RESULTS_FILE)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(RESULTS_FILE, 'utf8'));
+  } catch (e) {
+    console.error('⚠️  results.json corrupted, resetting:', e.message);
+    fs.writeFileSync(RESULTS_FILE, '[]');
+    return [];
+  }
+}
+
 app.get('/api/results', (req, res) => {
-  if (!fs.existsSync(RESULTS_FILE)) return res.json([]);
-  res.json(JSON.parse(fs.readFileSync(RESULTS_FILE, 'utf8')));
+  res.json(safeReadResults());
 });
 
 // Summary stats for the dashboard
 app.get('/api/stats', (req, res) => {
-  if (!fs.existsSync(RESULTS_FILE) || !fs.existsSync(CONFIG_FILE)) {
-    return res.json({ ready: false });
-  }
-  const results = JSON.parse(fs.readFileSync(RESULTS_FILE, 'utf8'));
+  if (!fs.existsSync(CONFIG_FILE)) return res.json({ ready: false });
+  const results = safeReadResults();
   const config  = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
   res.json(buildStats(results, config));
 });
