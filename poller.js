@@ -298,69 +298,45 @@ async function runPrompt(prompt, config) {
   const timestamp = new Date().toISOString();
   const platformResults = {};
 
+  // Run all 4 platforms IN PARALLEL — 30s max each
   const platforms = [
-    { key: 'chatgpt',    label: 'ChatGPT',           fn: () => runChatGPT(prompt),           runs: 2 }, // Responses API + web search
-    { key: 'claude',     label: 'Claude',             fn: () => runClaude(prompt),             runs: 2 }, // claude-sonnet-4-6 + web search
-    { key: 'perplexity', label: 'Perplexity',         fn: () => runPerplexity(prompt),         runs: 3 }, // Live web search built-in
-    { key: 'google_aio', label: 'Google AI Overview', fn: () => runSerpApiAIOverview(prompt),  runs: 1 }, // Deterministic (SerpApi)
+    { key: 'chatgpt',    label: 'ChatGPT',           timeout: 30000,
+      fn: async () => { const r = await runChatGPT(prompt); return { text: r.text, extra: { citedURLs: r.citedURLs||[] } }; } },
+    { key: 'claude',     label: 'Claude',             timeout: 30000,
+      fn: async () => { const r = await runClaude(prompt);  return { text: r.text, extra: { citedURLs: r.citedURLs||[] } }; } },
+    { key: 'perplexity', label: 'Perplexity',         timeout: 30000,
+      fn: async () => { const t = await runPerplexity(prompt); return { text: t, extra: {} }; } },
+    { key: 'google_aio', label: 'Google AIO',         timeout: 25000,
+      fn: async () => { const r = await runSerpApiAIOverview(prompt); return { text: r.text, extra: { organicURLs: r.organicURLs, citedSources: r.citedSources, hasAIO: r.hasAIO } }; } },
   ];
 
-  for (const p of platforms) {
-    const runsNeeded = p.runs || RUNS_PER_PLATFORM;
-    const runResults = [];
+  process.stdout.write(`  Running 4 platforms in parallel...`);
 
-    process.stdout.write(`  [${p.label}] ${runsNeeded > 1 ? `${runsNeeded} runs` : '1 run'}...`);
+  const settled = await Promise.allSettled(
+    platforms.map(p => withTimeout(p.fn(), p.timeout, p.label))
+  );
 
-    for (let i = 0; i < runsNeeded; i++) {
-      try {
-        let text, extra = {};
-        if (p.key === 'google_aio') {
-          const result = await withTimeout(p.fn(), 30000, 'SerpApi');
-          text = result.text;
-          extra = { organicURLs: result.organicURLs, citedSources: result.citedSources, hasAIO: result.hasAIO };
-        } else if (p.key === 'chatgpt' || p.key === 'claude') {
-          // Both now return { text, citedURLs } from web search APIs
-          const result = await withTimeout(p.fn(), 60000, p.label);
-          text = result.text;
-          extra = { citedURLs: result.citedURLs || [] };
-        } else {
-          text = await withTimeout(p.fn(), 45000, p.label);
-        }
-        const analysis = analyzeResponse(text, brand.name, brand.domain, competitors);
-        runResults.push({ response: text.slice(0, 2000), ...analysis, ...extra });
-        if (i < runsNeeded - 1) await new Promise(r => setTimeout(r, 1000)); // brief pause between runs
-      } catch (err) {
-        runResults.push({ error: err.message, mentioned: false, position: null });
-      }
+  platforms.forEach((p, i) => {
+    const result = settled[i];
+    if (result.status === 'rejected') {
+      platformResults[p.key] = { error: result.reason?.message || 'failed', mentioned: false, mentionRate: '0/1', position: null, citedBrandURLs: [], competitorMentions: [], sentiment: 'neutral', runs: 1, successRuns: 0 };
+      process.stdout.write(` ✗${p.label}`);
+    } else {
+      const { text, extra } = result.value;
+      const analysis = analyzeResponse(text || '', brand.name, brand.domain, competitors);
+      platformResults[p.key] = {
+        response: (text || '').slice(0, 2000),
+        ...analysis,
+        ...extra,
+        mentioned: analysis.mentioned,
+        mentionRate: analysis.mentioned ? '1/1' : '0/1',
+        runs: 1,
+        successRuns: 1,
+      };
+      process.stdout.write(` ✓${p.label}(${analysis.mentioned ? 'YES' : 'no'})`);
     }
-
-    // Aggregate: mentioned if true in ANY run, position = avg of non-null positions
-    const successRuns = runResults.filter(r => !r.error);
-    const mentionedRuns = runResults.filter(r => r.mentioned);
-    const positions = runResults.map(r => r.position).filter(Boolean);
-    const allCitedURLs = [...new Set(runResults.flatMap(r => r.citedBrandURLs || []))];
-    const allCompetitors = [...new Set(runResults.flatMap(r => r.competitorMentions || []))];
-    const sentiments = runResults.filter(r => r.sentiment).map(r => r.sentiment);
-    const topSentiment = ['positive','neutral','negative'].find(s => sentiments.filter(x=>x===s).length === sentiments.filter(x=>x===sentiments[0]).length) || 'neutral';
-
-    platformResults[p.key] = {
-      response: runResults.find(r => r.mentioned)?.response || runResults[0]?.response || '',
-      mentioned: mentionedRuns.length > 0,
-      mentionRate: `${mentionedRuns.length}/${runsNeeded}`,
-      position: positions.length ? Math.round(positions.reduce((a,b)=>a+b,0)/positions.length) : null,
-      citedBrandURLs: allCitedURLs,
-      competitorMentions: allCompetitors,
-      sentiment: topSentiment,
-      runs: runsNeeded,
-      successRuns: successRuns.length,
-      error: successRuns.length === 0 ? runResults[0]?.error : null,
-      ...(runResults[0]?.organicURLs ? { organicURLs: runResults[0].organicURLs } : {}),
-      ...(runResults[0]?.citedSources ? { citedSources: runResults[0].citedSources } : {}),
-    };
-
-    const r = platformResults[p.key];
-    console.log(` ✓ mentioned=${r.mentioned} (${r.mentionRate}) pos=${r.position ?? 'n/a'}`);
-  }
+  });
+  console.log();
 
   return { runId, timestamp, prompt, platformResults };
 }
@@ -378,16 +354,16 @@ async function runPoll() {
   console.log(`Prompts: ${config.prompts.length}`);
   console.log(`Competitors: ${config.competitors?.map(c => c.domain).join(', ') || 'none'}\n`);
 
-  for (let i = 0; i < config.prompts.length; i++) {
-    const prompt = config.prompts[i];
-    console.log(`\nPrompt ${i + 1}/${config.prompts.length}: "${prompt.slice(0, 70)}..."`);
-    const result = await runPrompt(prompt, config);
-    results.push(result);
-
-    // Small delay between prompts to avoid rate limits
-    if (i < config.prompts.length - 1) {
-      await new Promise(r => setTimeout(r, 2000));
-    }
+  // Run prompts in batches of 3 in parallel — 14 prompts = ~5 batches × 30s = ~2.5 min
+  const BATCH_SIZE = 3;
+  for (let i = 0; i < config.prompts.length; i += BATCH_SIZE) {
+    const batch = config.prompts.slice(i, i + BATCH_SIZE);
+    console.log(`\nBatch ${Math.floor(i/BATCH_SIZE)+1}: prompts ${i+1}–${Math.min(i+BATCH_SIZE, config.prompts.length)} of ${config.prompts.length}`);
+    const batchResults = await Promise.all(batch.map(p => runPrompt(p, config)));
+    results.push(...batchResults);
+    // Save after each batch so partial results are kept if interrupted
+    saveResults(results);
+    console.log(`  ✓ Batch saved (${results.length} total)`);
   }
 
   saveResults(results);
