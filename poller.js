@@ -184,7 +184,7 @@ async function runClaude(prompt) {
 
   const res = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4096,  // Web search responses are long — needs room for full ranked lists
+    max_tokens: 1500,  // Shorter to complete faster; web search still fires
     tools: [{
       type: 'web_search_20250305',
       name: 'web_search',
@@ -298,23 +298,31 @@ async function runPrompt(prompt, config) {
   const timestamp = new Date().toISOString();
   const platformResults = {};
 
-  // Run all 4 platforms IN PARALLEL — 30s max each
-  const platforms = [
-    { key: 'chatgpt',    label: 'ChatGPT',           timeout: 30000,
+  // ChatGPT, Perplexity, Google AIO run in parallel (fast)
+  // Claude runs separately after — its web search takes 40-50s and slows batches
+  const fastPlatforms = [
+    { key: 'chatgpt',    label: 'ChatGPT',    timeout: 30000,
       fn: async () => { const r = await runChatGPT(prompt); return { text: r.text, extra: { citedURLs: r.citedURLs||[] } }; } },
-    { key: 'claude',     label: 'Claude',             timeout: 30000,
-      fn: async () => { const r = await runClaude(prompt);  return { text: r.text, extra: { citedURLs: r.citedURLs||[] } }; } },
-    { key: 'perplexity', label: 'Perplexity',         timeout: 30000,
+    { key: 'perplexity', label: 'Perplexity', timeout: 30000,
       fn: async () => { const t = await runPerplexity(prompt); return { text: t, extra: {} }; } },
-    { key: 'google_aio', label: 'Google AIO',         timeout: 25000,
+    { key: 'google_aio', label: 'Google AIO', timeout: 25000,
       fn: async () => { const r = await runSerpApiAIOverview(prompt); return { text: r.text, extra: { organicURLs: r.organicURLs, citedSources: r.citedSources, hasAIO: r.hasAIO } }; } },
   ];
+  const claudePlatform = { key: 'claude', label: 'Claude', timeout: 55000,
+    fn: async () => { const r = await runClaude(prompt); return { text: r.text, extra: { citedURLs: r.citedURLs||[] } }; }
+  };
+  const platforms = [...fastPlatforms, claudePlatform];
 
-  process.stdout.write(`  Running 4 platforms in parallel...`);
+  process.stdout.write(`  [3 fast + Claude]...`);
 
-  const settled = await Promise.allSettled(
-    platforms.map(p => withTimeout(p.fn(), p.timeout, p.label))
-  );
+  // Run fast platforms in parallel, Claude sequentially after
+  const [fastSettled, claudeSettled] = await Promise.all([
+    Promise.allSettled(fastPlatforms.map(p => withTimeout(p.fn(), p.timeout, p.label))),
+    withTimeout(claudePlatform.fn(), claudePlatform.timeout, 'Claude')
+      .then(r => ({ status: 'fulfilled', value: r }))
+      .catch(e => ({ status: 'rejected', reason: e })),
+  ]);
+  const settled = [...fastSettled, claudeSettled];
 
   platforms.forEach((p, i) => {
     const result = settled[i];
